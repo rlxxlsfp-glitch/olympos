@@ -664,7 +664,7 @@ function renderHome(){
       h+=`<button class="row${memo[p.id]?' done':''}" data-act="open" data-id="${p.id}"><span class="num">${p.n}</span><span><span class="k">${p.k}</span><span class="t">${esc(p.t)}</span></span><span class="acc">${memo[p.id]?'외움<br>':''}${s&&s.t?Math.round(s.c/s.t*100)+'%, '+s.t+'문제':''}</span></button>`;});
     h+='</section>';
   });
-  h+=`<p style="margin-top:32px;text-align:center"><button class="link" data-act="reset">풀이 기록과 외움 표시 초기화</button></p>`;
+  h+=`<p style="margin-top:32px;text-align:center"><button class="link" data-act="reset">풀이 기록과 외움 표시 초기화</button></p><p class="sub" style="text-align:center;margin-top:8px">버전 5 (오답 노트)</p>`;
   app.innerHTML=h;
 }
 function studyBody(p){
@@ -744,7 +744,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{const w=e.target.closest&&e.target.closest('.w');if(w&&(e.key==='Enter'||e.key===' ')){e.preventDefault();w.classList.toggle('open')}});
 render();
-if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{})}
 </script>
 </body>
 </html>
