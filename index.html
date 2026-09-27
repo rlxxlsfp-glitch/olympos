@@ -120,6 +120,9 @@ sup{color:var(--blue);font-size:11px;font-family:"IBM Plex Sans KR",sans-serif;m
 .bq{display:inline-block;min-width:8em;height:1.1em;border-bottom:2px solid var(--ink);margin:0 4px;vertical-align:-3px}
 .kos{color:var(--muted);font-size:14px}
 .okc{color:var(--good)}
+.yj{font-size:14.5px;background:var(--blue-soft);border-radius:10px;padding:10px 12px;margin:12px 0 4px;line-height:1.6}
+.yj b{color:var(--blue);margin-right:8px}
+.okc{color:var(--good)}
 .strike{text-decoration:line-through;text-decoration-color:var(--bad);opacity:.7}
 .exh{font-weight:600;margin:0 0 8px}
 .enl{font-family:Literata,Georgia,serif}
@@ -886,6 +889,8 @@ const BX={
 P.forEach(p=>{p.c.ss=p.c.ss.concat(SX[p.id]);const bx=BX[p.id];p.bl.forEach((b,k)=>{if(bx[k])b.x=[...new Set(b.x.concat(bx[k]))];});
  p.i.forEach((it,k)=>{const extra=[];p.i.forEach((o,j)=>{if(j!==k)extra.push(...o.a)});it.x=[...new Set(it.x.concat(extra))].filter(x=>!it.a.includes(x));});});
 
+const Y={"3-1":"수업 첫 몇 분이 수업 전체 분위기를 정하므로, 시작 루틴을 마련해 효과적으로 출발해야 한다.","3-3":"운동할 시간이 없다면 피할 수 없는 집안일을 간단한 운동 기회로 활용하라.","3-5":"자신이 겪는 어려움을 긍정적인 진술로 바꿔 쓰면 생각과 행동이 바뀌고 자신감이 생긴다.","3-7":"아이는 말로 듣는 것보다 부모가 행동으로 보여 주는 모습을 보고 가치를 배우므로 행동으로 모범을 보여야 한다.","3-9":"사람마다 에너지가 최고인 시간이 다르므로 자신을 관찰해 그 시간에 가장 힘든 일을 하라.","3-11":"청자는 다시 들을 수 없으므로, 말할 때는 글보다 더 많은 단어로 요점을 길게 설명해야 한다.","11-1":"예민하고 즉시 도망치는 동물은 가두면 공황에 빠져서, 가장 많이 사냥된 가젤조차 가축화되지 못했다.","11-3":"언어적 은유는 독자의 노력이 필요한 수동적인 것이지만, 기술적 은유는 능동적이며 첫눈에 유용성이 분명해야 한다.","11-5":"풍족했던 수렵 채집 생활에도 불구하고 인류는 정착해 농업을 발전시켰고, 이는 인구 증가와 문명으로 이어졌다.","11-7":"기증자에 대한 엄격한 뇌사 기준은 오히려 의심을 키울 수 있으므로, 모든 사람에게 같은 사망 진단 기준을 적용해야 한다.","11-9":"어린아이는 부모의 말을 그대로 믿으므로, 칭찬은 아이의 자아상과 자존감을 높이는 강력한 도구다.","11-11":"AI의 핵심은 기계가 스스로 학습하고 개선한다는 점이며, 우리는 이런 기술이 세상에 미칠 영향을 인식해야 한다.","4-1":"우리 몸의 원자는 우주만큼 오래되었고 끊임없이 순환하므로, 우리는 원자를 소유하는 게 아니라 잠시 빌려 관리할 뿐이다.","4-3":"우리는 기억을 영상처럼 재생하지 않고 추상적으로 재구성하므로 효율적이지만, 세상을 있는 그대로 보지 못한다.","4-5":"감각은 정해진 몇 가지로 명확히 나눌 수 없으므로, 동물의 감각을 아리스토텔레스의 틀에 끼워 맞추지 말고 있는 그대로 연구해야 한다.","4-7":"듣는 사람 없이는 소리가 없듯이, 과학 논문도 독자가 이해해야 비로소 쓸모가 있고 연구가 완성된다.","4-9":"기술을 받아들이면 대가가 따르는데, 머리와 손의 분리와 앉아서 하는 일은 몸과 정신 건강을 위협한다.","4-11":"고객은 대체로 옳지만, 무슨 수를 써도 만족하지 않는 고객은 거절하고 다른 고객에게 집중해야 할 때도 있다.","12-1":"자원이 적을 때는 생존을 위해 나누지만, 더 많이 가질수록 울타리를 쌓고 덜 나누며 현실과 단절된다.","12-3":"인간은 인지적 한계가 있어 사회 전체가 계산을 나눠 맡으며, 개인은 사용법만 알고 거대한 집단 두뇌의 일부 역할을 한다.","12-5":"미니멀리즘은 감정을 해치지 않으며, 쓰지 않는 물건만 없애면 잠시의 아쉬움은 명료함의 기쁨으로 극복된다.","12-7":"광고주들은 시장 상황에 맞게 주장을 바꿨는데, 효모 수요가 줄자 효모를 비타민 공급원과 완하제로 재포지셔닝해 매출을 늘렸다.","12-9":"옥신은 줄기에서는 그늘진 쪽 성장을 촉진해 빛 쪽으로 휘게 하고, 뿌리에서는 성장을 억제해 아래로 휘게 한다.","12-11":"타인의 기대에 맞춰 살면 삶의 주도권을 잃으므로, 자신을 친절히 대하고 있는 그대로 받아들여 선택의 통제권을 되찾아야 한다.","6-1":"인간은 감각으로 지각할 수 없는 자연 현상을 증폭하거나 관찰 가능한 형태로 바꿔 주는 도구를 오랫동안 이용해 왔다.","6-3":"추상적 개념에 대해 신뢰할 수 있는 정량 데이터를 얻으려면 구체적인 답을 요구하는 질문을 해야 한다.","6-5":"거의 모든 것이 입을 거쳐 몸에 들어가므로, 구강 건강은 삶의 모든 면과 몸 전체의 건강에 영향을 준다.","6-7":"사람들은 대부분 자신이 바람직한 특성은 많고 나쁜 특성은 적어 평균 이상이라고 믿는 경향(워비곤 호수 효과)이 있다.","6-9":"집단은 자원 공유·보호·협력으로 생존을 돕고 번식에도 유리하므로, 진화는 강한 소속 욕구를 가진 개체를 선호했다.","6-11":"인간 사회는 미래 날씨를 아는 것을 바탕으로 운영되며, 농사부터 집·도로 같은 시설까지 모두 지역 기후에 맞춰 설계된다.","13-1":"우리는 좋은 일과 나쁜 일 모두에 적응해 결국 개인의 기본 행복 수준(기준선)으로 돌아간다.","13-3":"신제품 출시 때는 강한 소유감 때문에 가격을 높게 매기기 쉽지만, 초기 가격과 수익을 희생해 먼저 시장 도입을 확보해야 한다.","13-5":"위대한 작곡가는 당대에 낯설어 이해받지 못할 만큼 독창적이었고, 훌륭했지만 독창적이지 않았던 살리에리는 위대해지지 못했다.","13-7":"어디에 주의를 기울이고 무엇을 연습하느냐에 따라 뇌의 물리적 구조가 달라진다.","13-9":"반전 안경 실험에서 드러나듯, 시각 체계는 뒤집힌 세상에도 적응하고 다시 원래대로 돌아올 수 있을 만큼 스스로 적응한다.","13-11":"어떤 분야에서 탁월한 사람은 즉각적인 신뢰를 얻어, 그 분야와 무관한 조언을 해도 사람들이 귀를 기울인다.","13-13":"매일 목표를 이루며 자신감을 얻으려면 과제에 걸리는 시간을 추산하고, 긴 과제와 짧은 과제를 가용 시간에 맞게 배치해야 한다.","13-15":"로봇은 일자리만이 아니라 판단력도 빼앗고 있으며, 작업을 잘게 쪼개 지시하는 소프트웨어는 노동자를 살로 된 기계로 격하시킨다."};
+P.forEach(p=>{p.y=Y[p.id]||"";});
 const RS={C:'본문 전체의 핵심을 담고 있어요.',D:'본문의 일부 세부 내용만 다뤄서 글 전체를 대표하지 못해요.',O:'본문 내용과 반대되는 말이에요.',N:'본문에 나오지 않는 내용이에요.',B:'범위가 너무 넓거나 막연해요.',W:'본문에 나온 단어를 썼지만 핵심과는 다른 이야기예요. (단어 함정)'};
 const KO=new Map();
 P.forEach(p=>{const k=KT[p.id];const add=(en,ko,code)=>{if(!KO.has(en))KO.set(en,{ko,code,p});};
@@ -919,7 +924,8 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-const koBox=p=>`<details><summary>해석 보기</summary><p class="ko">${esc(p.ko)}</p></details>`;
+const koBox=p=>`<p class="yj"><b>이 글의 요지</b>${esc(p.y||"")}</p><details><summary>전체 해석 보기</summary><p class="ko">${esc(p.ko)}</p></details>`;
+const listWhy=(opts,right,ok,bad)=>`<ul class="gl">${opts.map((o,j)=>`<li>${CIRC[j]} <span class="enl">${esc(o)}</span><br>${o===right?`<b class="okc">✓ 정답</b> ${ok}`:`<b class="bad">✗</b> ${typeof bad==="function"?bad(o):bad}`}</li>`).join("")}</ul>`;
 
 const GEN={
 order(p){
@@ -972,7 +978,7 @@ imp(p){
   const it=pick(p.i);const idx=p.en.indexOf(it.p);if(idx<0)return null;
   const right=pick(it.a);const opts=shuffle([right,...shuffle(it.x).slice(0,4)]);
   const mk=cls=>esc(p.en.slice(0,idx))+`<u class="${cls}">${esc(it.p)}</u>`+esc(p.en.slice(idx+it.p.length));
-  const explain=`<p class="exh enl">${esc(right)}</p>${it.a.length>1?`<p class="muted">이렇게도 나올 수 있어요: ${it.a.filter(a=>a!==right).map(esc).join(' / ')}</p>`:''}<div class="psg"><p>${mk('hl')}</p></div>`+koBox(p);
+  const others=new Set(p.i.filter(o=>o!==it).flatMap(o=>o.a));const explain=listWhy(opts,right,'밑줄 친 표현이 글 속에서 뜻하는 바와 같아요.',o=>others.has(o)?'이 글의 <b>다른 밑줄 표현</b>의 뜻이에요. 위치를 헷갈리지 마세요.':'밑줄 친 표현의 문맥상 의미와 맞지 않아요.')+`<p class="exh enl">${esc(right)}</p>${it.a.length>1?`<p class="muted">이렇게도 나올 수 있어요: ${it.a.filter(a=>a!==right).map(esc).join(' / ')}</p>`:''}<div class="psg"><p>${mk('hl')}</p></div>`+koBox(p);
   return {prompt:`밑줄 친 <u class="enl">${esc(it.p)}</u>가 다음 글에서 의미하는 바로 가장 적절한 것은?`,body:`<p>${mk('')}</p>`,opts:opts.map(esc),ans:opts.indexOf(right),explain,en:true};
 },
 boxQ(p,sel,prompt,withNotes){
@@ -995,14 +1001,14 @@ blank(p){
   if(!p.bl.length)return null;const it=pick(p.bl);const right=pick(it.a);
   const opts=shuffle([right,...shuffle(it.x.filter(x=>!it.a.includes(x))).slice(0,4)]);
   const body=`<p>${esc(p.en.slice(0,it.i))}<span class="bq"></span>${esc(p.en.slice(it.i+it.p.length))}</p>`;
-  const explain=`<p class="exh enl">${esc(right)}</p>${it.a.length>1?`<p class="muted">같은 뜻으로 정답인 표현: ${it.a.filter(a=>a!==right).map(esc).join(' / ')}</p>`:''}<div class="psg"><p>${esc(p.en.slice(0,it.i))}<span class="hl">${esc(it.p)}</span>${esc(p.en.slice(it.i+it.p.length))}</p></div>`+koBox(p);
+  const explain=listWhy(opts,right,'빈칸 앞뒤 흐름과 글의 요지에 맞아요.',o=>/(never|no |not |less|stop|avoid|ignore|same as|opposite|fewer|slow)/i.test(o)&&!/(never|no |not |less|stop|avoid|ignore|same as|opposite|fewer|slow)/i.test(right)?'요지와 반대 방향의 말이에요.':'빈칸이 들어갈 문맥과 맞지 않아요.')+`<p class="exh enl">${esc(right)}</p>${it.a.length>1?`<p class="muted">같은 뜻으로 정답인 표현: ${it.a.filter(a=>a!==right).map(esc).join(' / ')}</p>`:''}<div class="psg"><p>${esc(p.en.slice(0,it.i))}<span class="hl">${esc(it.p)}</span>${esc(p.en.slice(it.i+it.p.length))}</p></div>`+koBox(p);
   return {prompt:'다음 빈칸에 들어갈 말로 가장 적절한 것은?',body,opts:opts.map(esc),ans:opts.indexOf(right),explain,en:true};
 },
 content(p){
   const c=p.c;const agree=Math.random()<.5;
   const items=agree?[{s:pick(c.T),ok:1},...shuffle(c.F).slice(0,4).map(s=>({s,ok:0}))]:[{s:pick(c.F),ok:0},...shuffle(c.T).slice(0,4).map(s=>({s,ok:1}))];
   const opts=shuffle(items);const ans=opts.findIndex(o=>agree?o.ok:!o.ok);
-  const explain=`<ul class="gl">${opts.map((o,j)=>`<li>${CIRC[j]} <span class="enl">${esc(o.s)}</span><br><b class="${o.ok?'':'bad'}">${o.ok?'✓ 글 내용과 일치':'✗ 글 내용과 다름'}</b></li>`).join('')}</ul>`+koBox(p);
+  const explain=`<ul class="gl">${opts.map((o,j)=>`<li>${CIRC[j]} <span class="enl">${esc(o.s)}</span><br><b class="${o.ok?'':'bad'}">${o.ok?'✓ 글 내용과 일치':'✗ 글 내용과 다름'}</b> <span class="muted">${o.ok?'본문에 나온 내용을 바꿔 말한 문장이에요.':'본문의 사실을 뒤집거나 없는 내용을 넣은 문장이에요. 해석에서 확인해 보세요.'}</span></li>`).join('')}</ul>`+koBox(p);
   return {prompt:`다음 글의 내용과 ${agree?'<b>일치하는</b>':'일치하지 <b>않는</b>'} 것은?`,body:`<p>${esc(p.en)}</p>`,opts:opts.map(o=>esc(o.s)),ans,explain,en:true};
 },
 topic(p){
@@ -1095,7 +1101,7 @@ function renderHome(){
       h+=`<button class="row${memo[p.id]?' done':''}" data-act="open" data-id="${p.id}"><span class="num">${p.n}</span><span><span class="k">${p.k}</span><span class="t">${esc(p.t)}</span></span><span class="acc">${memo[p.id]?'외움<br>':''}${s&&s.t?Math.round(s.c/s.t*100)+'%, '+s.t+'문제':''}</span></button>`;});
     h+='</section>';
   });
-  h+=`<p style="margin-top:32px;text-align:center"><button class="link" data-act="reset">풀이 기록과 외움 표시 초기화</button></p><p class="sub" style="text-align:center;margin-top:8px">버전 11 (선지 최종 추가)</p>`;
+  h+=`<p style="margin-top:32px;text-align:center"><button class="link" data-act="reset">풀이 기록과 외움 표시 초기화</button></p><p class="sub" style="text-align:center;margin-top:8px">버전 12 (해설 강화)</p>`;
   app.innerHTML=h;
 }
 function studyBody(p){
