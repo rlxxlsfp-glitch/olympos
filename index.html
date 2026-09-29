@@ -123,6 +123,8 @@ sup{color:var(--blue);font-size:11px;font-family:"IBM Plex Sans KR",sans-serif;m
 .yj{font-size:14.5px;background:var(--blue-soft);border-radius:10px;padding:10px 12px;margin:12px 0 4px;line-height:1.6}
 .yj b{color:var(--blue);margin-right:8px}
 .okc{color:var(--good)}
+.hardb{color:#fff;background:#D0453B;border-radius:6px;padding:1px 6px;font-size:12px;margin-left:4px}
+.hardtog{color:var(--bad);font-weight:600}
 .strike{text-decoration:line-through;text-decoration-color:var(--bad);opacity:.7}
 .exh{font-weight:600;margin:0 0 8px}
 .enl{font-family:Literata,Georgia,serif}
@@ -929,8 +931,27 @@ const KO2={"Abandoning": "포기하는", "Differently": "다르게", "Efficient"
 const ko=s=>KO2[s]||(KO&&KO.get(s)?KO.get(s).ko:"");
 const listWhy=(opts,right,ok,bad)=>`<ul class="gl">${opts.map((o,j)=>`<li>${CIRC[j]} <span class="enl">${esc(o)}</span>${ko(o)?`<br><span class="kos">${esc(ko(o))}</span>`:""}<br>${o===right?`<b class="okc">✓ 정답</b> ${ok}`:`<b class="bad">✗</b> ${typeof bad==="function"?bad(o):bad}`}</li>`).join("")}</ul>`;
 
+let HARD=false;
+const STOPW=new Set('the a an of to in on for and or but is are was were be been it its this that these those with as at by from their they them we our you your he his she her not no can may will would should could than more most very into about what how why when which who has have had does did do so if all one'.split(' '));
+const toks=s=>new Set(String(s).toLowerCase().replace(/[^a-z\s-]/g,' ').split(/\s+/).filter(w=>w.length>2&&!STOPW.has(w)));
+function simS(a,b){const A=toks(a),B=toks(b);let c=0;A.forEach(w=>{if(B.has(w))c++});return c/Math.sqrt((A.size||1)*(B.size||1));}
+function dpick(pool,right,ctx,k){pool=pool.filter(x=>x!==right);if(!HARD)return shuffle(pool).slice(0,k);
+ const sc=shuffle(pool).map(o=>({o,s:simS(o,right)*2+simS(o,ctx)+Math.random()*.2}));sc.sort((a,b)=>b.s-a.s);return sc.slice(0,k).map(x=>x.o);}
+function rankBy(pool,ctx,k,desc){const sc=shuffle(pool).map(o=>({o,s:simS(o,ctx)+Math.random()*.1}));sc.sort((a,b)=>desc?b.s-a.s:a.s-b.s);return sc.slice(0,k).map(x=>x.o);}
+const pc=m=>{let c=0;while(m){c+=m&1;m>>=1}return c};
 const GEN={
 order(p){
+  if(HARD){const s=p.s,n=s.length;const intro=1;const rest=s.slice(intro),m=rest.length;
+   if(m>=4){const cuts=[];const b=m/4;for(let i=1;i<4;i++)cuts.push(Math.max(i,Math.min(m-(4-i),Math.round(b*i)+ri(-1,1))));for(let i=1;i<3;i++)if(cuts[i]<=cuts[i-1])cuts[i]=cuts[i-1]+1;
+    if(cuts[2]<m){const ch=[rest.slice(0,cuts[0]),rest.slice(cuts[0],cuts[1]),rest.slice(cuts[1],cuts[2]),rest.slice(cuts[2])];
+     const L=['A','B','C','D'];const all=[];const perm=(a,r)=>{if(!a.length){all.push(r);return}a.forEach((x,i)=>perm(a.filter((_,j)=>j!==i),r+x))};perm(L,'');
+     const ord=pick(all.filter(x=>x!=='ABCD'));const lab={};for(let i=0;i<4;i++)lab[ord[i]]=ch[i];
+     const same=x=>[...x].filter((c,i)=>c===ord[i]).length+([...x].slice(0,2).join('')===ord.slice(0,2)?1:0);
+     const others=shuffle(all.filter(x=>x!==ord&&x!=='ABCD')).sort((a,b)=>same(b)-same(a)).slice(0,4);
+     const opts=[ord,...others].sort();const introT=esc(s.slice(0,intro).join(' '));
+     const body=`<p class="given">${introT}</p>`+L.map(x=>`<p><span class="tag">(${x})</span> ${esc(lab[x].join(' '))}</p>`).join('');
+     const explain=`<p class="exh">바른 순서: ${[...ord].map(x=>'('+x+')').join(' – ')}</p><p class="muted">극상 모드: 덩어리가 4개라 연결 고리(대명사, 연결어, 시간 순서)를 끝까지 따져야 해요.</p><div class="psg"><p>${introT}${[...ord].map(x=>` <span class="tag">(${x})</span> ${esc(lab[x].join(' '))}`).join('')}</p></div>`+koBox(p);
+     return {prompt:'주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은? <b class="hardb">극상</b>',body,opts:opts.map(x=>[...x].map(c=>'('+c+')').join(' – ')),ans:opts.indexOf(ord),explain};}}}
   const s=p.s,n=s.length;if(n<4)return null;
   const intro=n>=9?ri(1,2):1;const rest=s.slice(intro),m=rest.length;if(m<3)return null;
   const b=m/3;
@@ -947,7 +968,7 @@ order(p){
 },
 insert(p){
   const s=p.s,n=s.length;if(n<5)return null;
-  const k=ri(1,n-1);const ins=s[k];const r=s.filter((_,i)=>i!==k);
+  let k=ri(1,n-1);if(HARD){const cand=[];for(let i=1;i<n;i++)if(!/^(This|These|That|Those|It|They|He|She|However|But|For example|For instance|Therefore|Thus|So|Then|Instead|Similarly|Also|And|Such|Yet|Still)\b/.test(s[i]))cand.push(i);if(cand.length)k=pick(cand);}const ins=s[k];const r=s.filter((_,i)=>i!==k);
   const G=n-1;const w=Math.min(5,G);let start=k-ri(0,w-1);start=Math.max(1,Math.min(G-w+1,start));
   let h=`<p class="given">${esc(ins)}</p><p>${esc(r.slice(0,start).join(' '))}`;
   for(let i=0;i<w;i++){h+=` <span class="slot">( ${CIRC[i]} )</span> `;if(r[start+i]!==undefined)h+=esc(r[start+i]);}
@@ -958,7 +979,7 @@ insert(p){
 irr(p){
   const s=p.s,n=s.length;if(n<5)return null;
   const start=ri(1,n-4);const f=ri(0,4);let fs,why;
-  if(p.ir&&Math.random()<.85){const it=pick(p.ir[1]);fs=it[0];why=`<p class="exh">${CIRC[f]}번은 '${esc(it[1])}'에 대한 이야기예요.</p><p>비슷한 단어나 소재가 나오지만, 이 글은 <b>'${esc(p.ir[0])}'</b>에 대한 글이라 흐름과 관계없어요.</p>`;}
+  if(p.ir&&(HARD||Math.random()<.85)){const it=pick(p.ir[1]);fs=it[0];why=`<p class="exh">${CIRC[f]}번은 '${esc(it[1])}'에 대한 이야기예요.</p><p>비슷한 단어나 소재가 나오지만, 이 글은 <b>'${esc(p.ir[0])}'</b>에 대한 글이라 흐름과 관계없어요.</p>`;}
   else{let src=null;for(let i=0;i<40;i++){const q=pick(P.filter(q=>q!==p));const c=pick(q.s.slice(1));if(c.length>=45&&c.length<=230){fs=c;src=q;break}}if(!fs)return null;why=`<p class="exh">${CIRC[f]}번은 ${src.u}강 ${src.n}번 지문(${src.k})의 문장이에요.</p>`;}
   const nums=s.slice(start,start+4);nums.splice(f,0,fs);
   const pre=esc(s.slice(0,start).join(' '));const post=esc(s.slice(start+4).join(' '));
@@ -968,8 +989,8 @@ irr(p){
 },
 title(p){
   const right=pick(p.ts);
-  const nOther=Math.random()<.5?1:0;
-  const traps=shuffle(p.x).slice(0,4-nOther);
+  const nOther=!HARD&&Math.random()<.5?1:0;
+  const traps=dpick(p.x,right,p.en,4-nOther);
   const others=shuffle(P.filter(q=>q!==p)).slice(0,nOther).map(q=>pick(q.ts));
   const opts=shuffle([right,...traps,...others]);
   const body=`<p>${esc(p.en)}</p>`;
@@ -978,7 +999,7 @@ title(p){
 },
 imp(p){
   const it=pick(p.i);const idx=p.en.indexOf(it.p);if(idx<0)return null;
-  const right=pick(it.a);const opts=shuffle([right,...shuffle(it.x).slice(0,4)]);
+  const right=pick(it.a);const opts=shuffle([right,...dpick(it.x.filter(x=>!it.a.includes(x)),right,p.en,4)]);
   const mk=cls=>esc(p.en.slice(0,idx))+`<u class="${cls}">${esc(it.p)}</u>`+esc(p.en.slice(idx+it.p.length));
   const others=new Set(p.i.filter(o=>o!==it).flatMap(o=>o.a));const explain=listWhy(opts,right,'밑줄 친 표현이 글 속에서 뜻하는 바와 같아요.',o=>others.has(o)?'이 글의 <b>다른 밑줄 표현</b>의 뜻이에요. 위치를 헷갈리지 마세요.':'밑줄 친 표현의 문맥상 의미와 맞지 않아요.')+`<p class="exh enl">${esc(right)}</p>${it.a.length>1?`<p class="muted">이렇게도 나올 수 있어요: ${it.a.filter(a=>a!==right).map(esc).join(' / ')}</p>`:''}<div class="psg"><p>${mk('hl')}</p></div>`+koBox(p);
   return {prompt:`밑줄 친 <u class="enl">${esc(it.p)}</u>가 다음 글에서 의미하는 바로 가장 적절한 것은?`,body:`<p>${mk('')}</p>`,opts:opts.map(esc),ans:opts.indexOf(right),explain,en:true};
@@ -990,7 +1011,7 @@ boxQ(p,sel,prompt,withNotes){
   sel.forEach((o,j)=>{const seg=esc(p.en.slice(pos,o.i));h+=seg;ex+=seg;h+=`<span class="pair">(${L[j]}) [${esc(o.first)} / ${esc(o.second)}]</span>`;ex+=`<span class="hl">${esc(o.c)}</span>`;pos=o.i+o.len;});
   h+=esc(p.en.slice(pos));ex+=esc(p.en.slice(pos));
   const full=(1<<k)-1;const masks=[];for(let m=0;m<full;m++)masks.push(m);
-  let chosen=[full,...shuffle(masks).slice(0,Math.min(4,masks.length))];
+  let chosen=[full,...(HARD?shuffle(masks).sort((a,b)=>pc(b)-pc(a)):shuffle(masks)).slice(0,Math.min(4,masks.length))];
   const key=m=>sel.map((o,j)=>{const w=((m>>j)&1)?o.c:o.alt;return w===o.first?0:1}).join('');
   chosen.sort((a,b)=>key(a)<key(b)?-1:1);
   const opts=chosen.map(m=>`<span class="combo" style="--k:${k}">${sel.map((o,j)=>`<span>${esc(((m>>j)&1)?o.c:o.alt)}</span>`).join('')}</span>`);
@@ -1001,27 +1022,27 @@ boxQ(p,sel,prompt,withNotes){
 },
 blank(p){
   if(!p.bl.length)return null;const it=pick(p.bl);const right=pick(it.a);
-  const opts=shuffle([right,...shuffle(it.x.filter(x=>!it.a.includes(x))).slice(0,4)]);
+  const opts=shuffle([right,...dpick(it.x.filter(x=>!it.a.includes(x)),right,p.en,4)]);
   const body=`<p>${esc(p.en.slice(0,it.i))}<span class="bq"></span>${esc(p.en.slice(it.i+it.p.length))}</p>`;
   const explain=listWhy(opts,right,'빈칸 앞뒤 흐름과 글의 요지에 맞아요.',o=>/(never|no |not |less|stop|avoid|ignore|same as|opposite|fewer|slow)/i.test(o)&&!/(never|no |not |less|stop|avoid|ignore|same as|opposite|fewer|slow)/i.test(right)?'요지와 반대 방향의 말이에요.':'빈칸이 들어갈 문맥과 맞지 않아요.')+`<p class="exh enl">${esc(right)}</p>${it.a.length>1?`<p class="muted">같은 뜻으로 정답인 표현: ${it.a.filter(a=>a!==right).map(esc).join(' / ')}</p>`:''}<div class="psg"><p>${esc(p.en.slice(0,it.i))}<span class="hl">${esc(it.p)}</span>${esc(p.en.slice(it.i+it.p.length))}</p></div>`+koBox(p);
   return {prompt:'다음 빈칸에 들어갈 말로 가장 적절한 것은?',body,opts:opts.map(esc),ans:opts.indexOf(right),explain,en:true};
 },
 content(p){
   const c=p.c;const agree=Math.random()<.5;
-  const items=agree?[{s:pick(c.T),ok:1},...shuffle(c.F).slice(0,4).map(s=>({s,ok:0}))]:[{s:pick(c.F),ok:0},...shuffle(c.T).slice(0,4).map(s=>({s,ok:1}))];
+  const items=HARD?(agree?[{s:rankBy(c.T,p.en,1,false)[0],ok:1},...rankBy(c.F,p.en,4,true).map(s=>({s,ok:0}))]:[{s:rankBy(c.F,p.en,1,true)[0],ok:0},...rankBy(c.T,p.en,4,false).map(s=>({s,ok:1}))]):agree?[{s:pick(c.T),ok:1},...shuffle(c.F).slice(0,4).map(s=>({s,ok:0}))]:[{s:pick(c.F),ok:0},...shuffle(c.T).slice(0,4).map(s=>({s,ok:1}))];
   const opts=shuffle(items);const ans=opts.findIndex(o=>agree?o.ok:!o.ok);
   const explain=`<ul class="gl">${opts.map((o,j)=>`<li>${CIRC[j]} <span class="enl">${esc(o.s)}</span>${ko(o.s)?`<br><span class="kos">${esc(ko(o.s))}</span>`:''}<br><b class="${o.ok?'':'bad'}">${o.ok?'✓ 글 내용과 일치':'✗ 글 내용과 다름'}</b> <span class="muted">${o.ok?'본문에 나온 내용을 바꿔 말한 문장이에요.':'본문의 사실을 뒤집거나 없는 내용을 넣은 문장이에요. 해석에서 확인해 보세요.'}</span></li>`).join('')}</ul>`+koBox(p);
   return {prompt:`다음 글의 내용과 ${agree?'<b>일치하는</b>':'일치하지 <b>않는</b>'} 것은?`,body:`<p>${esc(p.en)}</p>`,opts:opts.map(o=>esc(o.s)),ans,explain,en:true};
 },
 topic(p){
-  const right=pick(p.c.a);const other=Math.random()<.4?[pick(pick(P.filter(q=>q!==p)).c.a)]:[];
-  const opts=shuffle([right,...shuffle(p.c.x).slice(0,4-other.length),...other]);
+  const right=pick(p.c.a);const other=!HARD&&Math.random()<.4?[pick(pick(P.filter(q=>q!==p)).c.a)]:[];
+  const opts=shuffle([right,...dpick(p.c.x,right,p.en,4-other.length),...other]);
   const explain=optExplain(p,opts,right)+`<p class="muted">같은 뜻의 다른 정답: ${p.c.a.filter(a=>a!==right).map(t=>esc(t)+' ('+esc(KO.get(t).ko)+')').join(' / ')}</p>`+koBox(p);
   return {prompt:'다음 글의 주제로 가장 적절한 것은?',body:`<p>${esc(p.en)}</p>`,opts:opts.map(esc),ans:opts.indexOf(right),explain,en:true};
 },
 sum(p){
   const [s,A,B]=pick(p.c.ss);const combos=[];for(let i=0;i<A.length;i++)for(let j=0;j<B.length;j++)if(i||j)combos.push([i,j]);
-  let ch=[[0,0],...shuffle(combos).slice(0,4)];ch.sort((x,y)=>x[0]-y[0]||x[1]-y[1]);
+  let ch=[[0,0],...(HARD?shuffle(combos).sort((x,y)=>((x[0]&&x[1])?1:0)-((y[0]&&y[1])?1:0)):shuffle(combos)).slice(0,4)];ch.sort((x,y)=>x[0]-y[0]||x[1]-y[1]);
   const opts=ch.map(([i,j])=>`<span class="combo" style="--k:2"><span>${esc(A[i])}</span><span>${esc(B[j])}</span></span>`);
   const sent=esc(s).replace('(A)','<b class="tag">(A)</b> ______').replace('(B)','<b class="tag">(B)</b> ______');
   const full=esc(s).replace('(A)',`<span class="hl">${esc(A[0])}</span>`).replace('(B)',`<span class="hl">${esc(B[0])}</span>`);
@@ -1067,7 +1088,7 @@ function weightedPick(pool){
   for(let i=0;i<pool.length;i++){r-=ws[i];if(r<=0)return pool[i]}return pool[pool.length-1];
 }
 function nextQ(){
-  const z=st.quiz;
+  const z=st.quiz;HARD=!!z.hard;
   if(z.mode){z.done=false;z.pick=null;
     while(z.queue.length){const k=z.queue.shift();const w=wrongs.find(x=>x.k===k);if(!w)continue;const p=P.find(x=>x.id===w.id);if(!p)continue;
       let q=null;if(z.mode==='new'){for(let i=0;i<10&&!q;i++)q=GEN[w.type](p);}
@@ -1075,7 +1096,7 @@ function nextQ(){
     z.q=null;return}
   for(let t=0;t<40;t++){
     const p=weightedPick(z.pool);if(z.pool.length>1&&p===z.last)continue;
-    const type=pick(z.types.flatMap(t=>t==='gram'?[t,t]:[t]));const q=GEN[type](p);
+    const type=pick(z.types.flatMap(t=>t==='gram'?[t,t]:[t]));HARD=!!z.hard;let q=GEN[type](p);if(HARD&&type==='gram'){for(let g=0;g<25&&q&&!/개수|짝지은|옳은/.test(q.prompt);g++)q=GEN.gram(p);}if(HARD&&type==='word'){for(let g=0;g<10&&q&&!q.head;g++)q=GEN.word(p);}
     if(q){q.p=p;q.type=type;z.q=q;z.last=p;z.done=false;z.pick=null;return}
   }
   const p=z.pool[0];const q=GEN.title(p);q.p=p;q.type='title';z.q=q;z.done=false;z.pick=null;
@@ -1093,6 +1114,7 @@ function renderHome(){
   h+=`<section class="panel"><h2>문제 풀기</h2><p class="sub">문제는 풀 때마다 새로 만들어져서 끝없이 나와요.</p>
   <p class="lbl">문제 유형</p><div class="chips">${TYPES.map(t=>`<button class="chip" data-act="type" data-k="${t.k}" aria-pressed="${cfg.types.includes(t.k)}">${t.name}</button>`).join('')}</div>
   <p class="lbl">범위</p><div class="chips">${UNITS.map(u=>`<button class="chip" data-act="unit" data-u="${u.u}" aria-pressed="${cfg.units.includes(u.u)}">${u.u}강</button>`).join('')}</div>
+  <label class="tog hardtog"><input type="checkbox" data-act="hard" ${cfg.hard?'checked':''}>🔥 난이도 극상 (헷갈리는 선지만, 순서 4덩어리, 어법 개수·짝짓기)</label>
   <label class="tog"><input type="checkbox" data-act="weak" ${cfg.weak?'checked':''}>자주 틀린 지문을 더 자주 내기</label>
   <button class="btn" data-act="start" ${(!cfg.types.length||!cfg.units.length)?'disabled':''}>문제 풀기 시작</button></section>`;
   const wc={};wrongs.forEach(w=>{wc[w.type]=(wc[w.type]||0)+1});
@@ -1103,7 +1125,7 @@ function renderHome(){
       h+=`<button class="row${memo[p.id]?' done':''}" data-act="open" data-id="${p.id}"><span class="num">${p.n}</span><span><span class="k">${p.k}</span><span class="t">${esc(p.t)}</span></span><span class="acc">${memo[p.id]?'외움<br>':''}${s&&s.t?Math.round(s.c/s.t*100)+'%, '+s.t+'문제':''}</span></button>`;});
     h+='</section>';
   });
-  h+=`<p style="margin-top:32px;text-align:center"><button class="link" data-act="reset">풀이 기록과 외움 표시 초기화</button></p><p class="sub" style="text-align:center;margin-top:8px">버전 13 (모든 선지 한국어 뜻)</p>`;
+  h+=`<p style="margin-top:32px;text-align:center"><button class="link" data-act="reset">풀이 기록과 외움 표시 초기화</button></p><p class="sub" style="text-align:center;margin-top:8px">버전 14 (난이도 극상)</p>`;
   app.innerHTML=h;
 }
 function studyBody(p){
@@ -1138,7 +1160,7 @@ function renderQuiz(){
   const z=st.quiz,q=z.q;
   if(!q){app.innerHTML=`<div class="top"><button class="ghost" data-act="home">목록으로</button></div><section class="panel" style="text-align:center;padding:36px 16px"><h2>오답 노트 한 바퀴 끝!</h2><p class="sub">${z.t}문제 중 ${z.c}문제 맞혔고, ${z.cleared}문제를 오답 노트에서 뺐어요.</p><p class="sub">남은 오답 ${wrongs.length}개</p>${wrongs.length?`<button class="btn" data-act="wrong" data-m="same">남은 오답 다시 풀기</button>`:''}<button class="btn" style="background:transparent;color:var(--blue);border:1px solid var(--line)" data-act="home">목록으로</button></section>`;return}
   let h=`<div class="top"><button class="ghost" data-act="home">그만하기</button><span class="score">${z.mode?`오답 노트 ${z.t+(z.done?0:1)} / ${z.total}`:`맞힌 문제 ${z.c} / ${z.t}`}</span></div>
-  <div class="qhead"><span class="qtype">${TN[q.type]}</span><span>${z.done?`${q.p.u}강 ${q.p.n}번 지문`:(z.pool&&z.pool.length===1?`${q.p.u}강 ${q.p.n}번 지문`:'어느 지문일까요?')}</span></div>
+  <div class="qhead"><span class="qtype">${TN[q.type]}${z.hard?' <b class="hardb">🔥 극상</b>':''}</span><span>${z.done?`${q.p.u}강 ${q.p.n}번 지문`:(z.pool&&z.pool.length===1?`${q.p.u}강 ${q.p.n}번 지문`:'어느 지문일까요?')}</span></div>
   <p class="prompt">${q.prompt}</p><div class="psg">${q.body}</div>${q.head||''}
   <div class="opts">${q.opts.map((o,i)=>{let c='opt';if(z.done){if(i===q.ans)c+=' right';else if(i===z.pick)c+=' wrong';}
     return `<button class="${c}" data-act="pick" data-i="${i}" ${z.done?'disabled':''}><span class="cn">${CIRC[i]}</span><span class="${q.en?'en':''}">${q.type==='insert'||q.type==='irr'||q.nolabel?'':o}</span></button>`}).join('')}</div>`;
@@ -1147,7 +1169,7 @@ function renderQuiz(){
   h+=`<div class="bar"><div class="in"><button class="btn" data-act="nextq" ${z.done?'':'disabled'}>${z.mode&&!z.queue.length?'결과 보기':'다음 문제'}</button></div></div>`;
   app.innerHTML=h;
 }
-function startQuiz(pool,types){st.quiz={pool,types,c:0,t:0,last:null};nextQ();st.view='quiz';render();window.scrollTo(0,0);}
+function startQuiz(pool,types){st.quiz={pool,types,c:0,t:0,last:null,hard:!!cfg.hard};nextQ();st.view='quiz';render();window.scrollTo(0,0);}
 function openStudy(p){st.cur=p;st.view='study';st.revealAll=false;render();window.scrollTo(0,0);}
 
 document.addEventListener('click',e=>{
@@ -1157,6 +1179,7 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'type':{const k=el.dataset.k;cfg.types=cfg.types.includes(k)?cfg.types.filter(x=>x!==k):[...cfg.types,k];store.set('oly-cfg',cfg);render();break}
     case 'unit':{const u=+el.dataset.u;cfg.units=cfg.units.includes(u)?cfg.units.filter(x=>x!==u):[...cfg.units,u];store.set('oly-cfg',cfg);render();break}
+    case 'hard':cfg.hard=el.checked;store.set('oly-cfg',cfg);break;
     case 'weak':cfg.weak=el.checked;store.set('oly-cfg',cfg);break;
     case 'start':startQuiz(P.filter(p=>cfg.units.includes(p.u)),cfg.types.slice());break;
     case 'open':openStudy(P.find(p=>p.id===el.dataset.id));break;
@@ -1174,7 +1197,7 @@ document.addEventListener('click',e=>{
       else if(!ok){const q=z.q;wrongs.push({k:Date.now().toString(36)+Math.random().toString(36).slice(2,6),id:q.p.id,type:q.type,q:{prompt:q.prompt,body:q.body,opts:q.opts,ans:q.ans,explain:q.explain,head:q.head||'',en:!!q.en,nolabel:!!q.nolabel}});saveWrongs();}
       const s=stats[z.q.p.id]||{c:0,t:0};s.t++;if(ok)s.c++;stats[z.q.p.id]=s;store.set('oly-stats',stats);render();
       const fb=document.getElementById('fb');if(fb)fb.scrollIntoView({block:'nearest'});break}
-    case 'wrong':{if(!wrongs.length)break;const q=shuffle(wrongs.map(w=>w.k));st.quiz={mode:el.dataset.m,queue:q,total:q.length,c:0,t:0,cleared:0};nextQ();st.view='quiz';render();window.scrollTo(0,0);break}
+    case 'wrong':{if(!wrongs.length)break;const q=shuffle(wrongs.map(w=>w.k));st.quiz={mode:el.dataset.m,queue:q,total:q.length,c:0,t:0,cleared:0,hard:!!cfg.hard};nextQ();st.view='quiz';render();window.scrollTo(0,0);break}
     case 'wrongclear':if(confirm('오답 노트를 모두 지울까요?')){wrongs=[];saveWrongs();render();}break;
     case 'nextq':nextQ();render();window.scrollTo(0,0);break;
     case 'openq':openStudy(z.q.p);break;
