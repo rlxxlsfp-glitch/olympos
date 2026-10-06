@@ -126,7 +126,7 @@ sup{color:var(--blue);font-size:11px;font-family:"IBM Plex Sans KR",sans-serif;m
 .hardb{color:#fff;background:#D0453B;border-radius:6px;padding:1px 6px;font-size:12px;margin-left:4px}
 .hardtog{color:var(--bad);font-weight:600}
 .tabs{display:flex;gap:6px;margin:10px 0 8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
-.tabb{flex:1;border:0;background:none;border-radius:9px;padding:9px 6px;font-weight:600;cursor:pointer;color:var(--muted)}
+.tabb{flex:1;border:0;background:none;border-radius:9px;padding:9px 4px;white-space:nowrap;font-size:clamp(13px,3.6vw,15px);font-weight:600;cursor:pointer;color:var(--muted)}
 .tabb[aria-pressed="true"]{background:var(--blue);color:var(--on-blue)}
 .notes h2{font-size:16px;color:var(--blue)}
 .nl{padding-left:1.2em;margin:6px 0 0;line-height:1.75;font-size:15px}
@@ -1287,11 +1287,11 @@ const U=a=>[...new Set(a)];P.forEach(p=>{p.ts=U(p.ts);p.x=U(p.x).filter(x=>!p.ts
 
 const listWhy=(opts,right,ok,bad)=>`<ul class="gl">${opts.map((o,j)=>`<li>${CIRC[j]} <span class="enl">${esc(o)}</span>${ko(o)?`<br><span class="kos">${esc(ko(o))}</span>`:""}<br>${o===right?`<b class="okc">✓ 정답</b> ${ok}`:`<b class="bad">✗</b> ${typeof bad==="function"?bad(o):bad}`}</li>`).join("")}</ul>`;
 
-let HARD=false;
+let HARD=false;let EXL=true;
 const STOPW=new Set('the a an of to in on for and or but is are was were be been it its this that these those with as at by from their they them we our you your he his she her not no can may will would should could than more most very into about what how why when which who has have had does did do so if all one'.split(' '));
 const toks=s=>new Set(String(s).toLowerCase().replace(/[^a-z\s-]/g,' ').split(/\s+/).filter(w=>w.length>2&&!STOPW.has(w)));
 function simS(a,b){const A=toks(a),B=toks(b);let c=0;A.forEach(w=>{if(B.has(w))c++});return c/Math.sqrt((A.size||1)*(B.size||1));}
-function dpick(pool,right,ctx,k){pool=pool.filter(x=>x!==right);if(!HARD)return shuffle(pool).slice(0,k);
+function dpick(pool,right,ctx,k){pool=pool.filter(x=>x!==right);if(!HARD&&!EXL)return shuffle(pool).slice(0,k);
  const sc=shuffle(pool).map(o=>({o,s:simS(o,right)*2+simS(o,ctx)+Math.random()*.2}));sc.sort((a,b)=>b.s-a.s);return sc.slice(0,k).map(x=>x.o);}
 function rankBy(pool,ctx,k,desc){const sc=shuffle(pool).map(o=>({o,s:simS(o,ctx)+Math.random()*.1}));sc.sort((a,b)=>desc?b.s-a.s:a.s-b.s);return sc.slice(0,k).map(x=>x.o);}
 const pc=m=>{let c=0;while(m){c+=m&1;m>>=1}return c};
@@ -1335,7 +1335,7 @@ insert(p){
 irr(p){
   const s=p.s,n=s.length;if(n<5)return null;
   const start=ri(1,n-4);const f=ri(0,4);let fs,why;
-  if(p.ir&&(HARD||Math.random()<.85)){const it=pick(p.ir[1]);fs=it[0];why=`<p class="exh">${CIRC[f]}번은 '${esc(it[1])}'에 대한 이야기예요.</p><p>비슷한 단어나 소재가 나오지만, 이 글은 <b>'${esc(p.ir[0])}'</b>에 대한 글이라 흐름과 관계없어요.</p>`;}
+  if(p.ir&&(HARD||EXL||Math.random()<.85)){const it=pick(p.ir[1]);fs=it[0];why=`<p class="exh">${CIRC[f]}번은 '${esc(it[1])}'에 대한 이야기예요.</p><p>비슷한 단어나 소재가 나오지만, 이 글은 <b>'${esc(p.ir[0])}'</b>에 대한 글이라 흐름과 관계없어요.</p>`;}
   else{let src=null;for(let i=0;i<40;i++){const q=pick(P.filter(q=>q!==p));const c=pick(q.s.slice(1));if(c.length>=45&&c.length<=230){fs=c;src=q;break}}if(!fs)return null;why=`<p class="exh">${CIRC[f]}번은 ${PL(src)} 지문(${src.k})의 문장이에요.</p>`;}
   const nums=s.slice(start,start+4);nums.splice(f,0,fs);
   const pre=esc(s.slice(0,start).join(' '));const post=esc(s.slice(start+4).join(' '));
@@ -1345,7 +1345,7 @@ irr(p){
 },
 title(p){
   const right=pick(p.ts);
-  const nOther=!HARD&&Math.random()<.5?1:0;
+  const nOther=!(HARD||EXL)&&Math.random()<.5?1:0;
   const traps=dpick(p.x,right,p.en,4-nOther);
   const others=shuffle(P.filter(q=>q!==p)).slice(0,nOther).map(q=>pick(q.ts));
   const opts=shuffle([right,...traps,...others]);
@@ -1367,7 +1367,7 @@ boxQ(p,sel,prompt,withNotes){
   sel.forEach((o,j)=>{const seg=esc(p.en.slice(pos,o.i));h+=seg;ex+=seg;h+=`<span class="pair">(${L[j]}) [${esc(o.first)} / ${esc(o.second)}]</span>`;ex+=`<span class="hl">${esc(o.c)}</span>`;pos=o.i+o.len;});
   h+=esc(p.en.slice(pos));ex+=esc(p.en.slice(pos));
   const full=(1<<k)-1;const masks=[];for(let m=0;m<full;m++)masks.push(m);
-  let chosen=[full,...(HARD?shuffle(masks).sort((a,b)=>pc(b)-pc(a)):shuffle(masks)).slice(0,Math.min(4,masks.length))];
+  let chosen=[full,...((HARD||EXL)?shuffle(masks).sort((a,b)=>pc(b)-pc(a)):shuffle(masks)).slice(0,Math.min(4,masks.length))];
   const key=m=>sel.map((o,j)=>{const w=((m>>j)&1)?o.c:o.alt;return w===o.first?0:1}).join('');
   chosen.sort((a,b)=>key(a)<key(b)?-1:1);
   const opts=chosen.map(m=>`<span class="combo" style="--k:${k}">${sel.map((o,j)=>`<span>${esc(((m>>j)&1)?o.c:o.alt)}</span>`).join('')}</span>`);
@@ -1377,7 +1377,7 @@ boxQ(p,sel,prompt,withNotes){
   return {prompt:`${L.slice(0,k).map(x=>'('+x+')').join(', ')}의 각 네모 안에서 ${prompt}`,body:`<p>${h}</p>`,opts,ans:chosen.indexOf(full),explain,head};
 },
 blank(p){
-  if(!p.bl.length)return null;const it=pick(p.bl);const right=pick(it.a);
+  if(!p.bl.length)return null;const it=pick(p.bl);const right=(HARD||EXL)&&it.a.length>1&&Math.random()<.75?pick(it.a.slice(1)):pick(it.a);
   const opts=shuffle([right,...dpick(it.x.filter(x=>!it.a.includes(x)),right,p.en,4)]);
   const body=`<p>${esc(p.en.slice(0,it.i))}<span class="bq"></span>${esc(p.en.slice(it.i+it.p.length))}</p>`;
   const explain=listWhy(opts,right,'빈칸 앞뒤 흐름과 글의 요지에 맞아요.',o=>/(never|no |not |less|stop|avoid|ignore|same as|opposite|fewer|slow)/i.test(o)&&!/(never|no |not |less|stop|avoid|ignore|same as|opposite|fewer|slow)/i.test(right)?'요지와 반대 방향의 말이에요.':'빈칸이 들어갈 문맥과 맞지 않아요.')+`<p class="exh enl">${esc(right)}</p>${it.a.length>1?`<p class="muted">같은 뜻으로 정답인 표현: ${it.a.filter(a=>a!==right).map(esc).join(' / ')}</p>`:''}<div class="psg"><p>${esc(p.en.slice(0,it.i))}<span class="hl">${esc(it.p)}</span>${esc(p.en.slice(it.i+it.p.length))}</p></div>`+koBox(p);
@@ -1385,20 +1385,20 @@ blank(p){
 },
 content(p){
   const c=p.c;const agree=Math.random()<.5;
-  const items=HARD?(agree?[{s:rankBy(c.T,p.en,1,false)[0],ok:1},...rankBy(c.F,p.en,4,true).map(s=>({s,ok:0}))]:[{s:rankBy(c.F,p.en,1,true)[0],ok:0},...rankBy(c.T,p.en,4,false).map(s=>({s,ok:1}))]):agree?[{s:pick(c.T),ok:1},...shuffle(c.F).slice(0,4).map(s=>({s,ok:0}))]:[{s:pick(c.F),ok:0},...shuffle(c.T).slice(0,4).map(s=>({s,ok:1}))];
+  const items=(HARD||EXL)?(agree?[{s:rankBy(c.T,p.en,1,false)[0],ok:1},...rankBy(c.F,p.en,4,true).map(s=>({s,ok:0}))]:[{s:rankBy(c.F,p.en,1,true)[0],ok:0},...rankBy(c.T,p.en,4,false).map(s=>({s,ok:1}))]):agree?[{s:pick(c.T),ok:1},...shuffle(c.F).slice(0,4).map(s=>({s,ok:0}))]:[{s:pick(c.F),ok:0},...shuffle(c.T).slice(0,4).map(s=>({s,ok:1}))];
   const opts=shuffle(items);const ans=opts.findIndex(o=>agree?o.ok:!o.ok);
   const explain=`<ul class="gl">${opts.map((o,j)=>`<li>${CIRC[j]} <span class="enl">${esc(o.s)}</span>${ko(o.s)?`<br><span class="kos">${esc(ko(o.s))}</span>`:''}<br><b class="${o.ok?'':'bad'}">${o.ok?'✓ 글 내용과 일치':'✗ 글 내용과 다름'}</b> <span class="muted">${o.ok?'본문에 나온 내용을 바꿔 말한 문장이에요.':'본문의 사실을 뒤집거나 없는 내용을 넣은 문장이에요. 해석에서 확인해 보세요.'}</span></li>`).join('')}</ul>`+koBox(p);
   return {prompt:`다음 글의 내용과 ${agree?'<b>일치하는</b>':'일치하지 <b>않는</b>'} 것은?`,body:`<p>${esc(p.en)}</p>`,opts:opts.map(o=>esc(o.s)),ans,explain,en:true};
 },
 topic(p){
-  const right=pick(p.c.a);const other=!HARD&&Math.random()<.4?[pick(pick(P.filter(q=>q!==p)).c.a)]:[];
+  const right=pick(p.c.a);const other=!(HARD||EXL)&&Math.random()<.4?[pick(pick(P.filter(q=>q!==p)).c.a)]:[];
   const opts=shuffle([right,...dpick(p.c.x,right,p.en,4-other.length),...other]);
   const explain=optExplain(p,opts,right)+`<p class="muted">같은 뜻의 다른 정답: ${p.c.a.filter(a=>a!==right).map(t=>esc(t)+' ('+esc(KO.get(t).ko)+')').join(' / ')}</p>`+koBox(p);
   return {prompt:'다음 글의 주제로 가장 적절한 것은?',body:`<p>${esc(p.en)}</p>`,opts:opts.map(esc),ans:opts.indexOf(right),explain,en:true};
 },
 sum(p){
   const [s,A,B]=pick(p.c.ss);const combos=[];for(let i=0;i<A.length;i++)for(let j=0;j<B.length;j++)if(i||j)combos.push([i,j]);
-  let ch=[[0,0],...(HARD?shuffle(combos).sort((x,y)=>((x[0]&&x[1])?1:0)-((y[0]&&y[1])?1:0)):shuffle(combos)).slice(0,4)];ch.sort((x,y)=>x[0]-y[0]||x[1]-y[1]);
+  let ch=[[0,0],...((HARD||EXL)?shuffle(combos).sort((x,y)=>((x[0]&&x[1])?1:0)-((y[0]&&y[1])?1:0)):shuffle(combos)).slice(0,4)];ch.sort((x,y)=>x[0]-y[0]||x[1]-y[1]);
   const opts=ch.map(([i,j])=>`<span class="combo" style="--k:2"><span>${esc(A[i])}</span><span>${esc(B[j])}</span></span>`);
   const sent=esc(s).replace('(A)','<b class="tag">(A)</b> ______').replace('(B)','<b class="tag">(B)</b> ______');
   const full=esc(s).replace('(A)',`<span class="hl">${esc(A[0])}</span>`).replace('(B)',`<span class="hl">${esc(B[0])}</span>`);
@@ -1444,8 +1444,94 @@ function weightedPick(pool){
   let r=Math.random()*ws.reduce((a,b)=>a+b,0);
   for(let i=0;i<pool.length;i++){r-=ws[i];if(r<=0)return pool[i]}return pool[pool.length-1];
 }
+const EXAM=[
+{n:1,pid:'6-3',type:'title',prompt:'다음 글의 제목으로 가장 적절한 것은?',body:'@',en:1,
+opts:['Why Abstract Concepts Resist Every Form of Measurement|추상적 개념이 모든 측정 방식에 저항하는 이유','Concrete Questions: The Key to Reliable Quantitative Data|구체적인 질문: 신뢰할 수 있는 양적 데이터의 열쇠','The Unreliable Memory: A Hidden Enemy of Psychological Research|신뢰할 수 없는 기억: 심리학 연구의 숨은 적','Measuring Happiness and Memory Through Observable Behaviors|관찰 가능한 행동을 통한 행복과 기억의 측정','How Vague Definitions Make Quantitative Research Impossible|모호한 정의가 양적 연구를 불가능하게 만드는 방식'],ans:1,
+ex:'구체적인 응답을 요구하는 질문이 추상적 개념을 명확히 하고 연구 간 일관성을 보장한다는 내용 → ②.',why:['오히려 구체적 질문으로 명확해짐','정답','일부 세부 내용','도입 예시일 뿐','‘불가능하다’는 과장']},
+{n:2,pid:'M9-32',type:'title',prompt:'다음 글의 제목으로 가장 적절한 것은?',body:'@',en:1,
+opts:['Not the Event but the Story: Where Our Emotions Really Come From|사건이 아니라 이야기(해석): 우리 감정이 실제로 비롯되는 곳','Stoicism: The Art of Suppressing Painful Emotions|스토아 철학: 고통스러운 감정을 억누르는 기술','Feelings First, Judgments Later: How the Mind Reacts|감정이 먼저, 판단은 나중: 마음이 반응하는 방식','Why Criticism and Job Loss Hurt Our Self-Worth So Deeply|비판과 실직이 자존감에 그토록 깊은 상처를 주는 이유','Emotions as Automatic Reactions Beyond Our Control|통제할 수 없는 자동적 반응으로서의 감정'],ans:0,
+ex:'감정은 사건 자체가 아니라 사건에 대한 해석(판단)에서 생긴다(Change the judgment, and you change the emotion) → ①.',why:['정답','억누르는 것이 아니라고 명시(This doesn’t mean suppressing)','판단이 먼저이고 감정이 따라옴 (순서 반대)','예시에 불과','감정이 자동 반응이 아니라는 본문과 정반대']},
+{n:4,pid:'L1-2',type:'content',prompt:'다음 글의 내용과 일치하지 <b>않는</b> 것은?',body:'@',en:1,
+opts:['Ben and Lily had been raised illegally in a tiny cage for years before they were rescued.|Ben과 Lily는 구조되기 전 수년간 작은 우리에서 불법으로 길러졌다.','The purpose of “behavioral enrichment” was to help the bears regain their natural instincts.|‘행동 풍부화’의 목적은 곰들이 타고난 본능을 되찾도록 돕는 것이었다.','To make the feeders, holes were made in a log and then filled with honey.|먹이통을 만들기 위해 통나무에 구멍을 뚫고 그 안을 꿀로 채웠다.','The feeders were hung far from the bears’ habitat so that the bears could explore a wider area.|곰들이 더 넓은 지역을 탐색할 수 있도록 먹이통을 서식지에서 멀리 떨어진 곳에 걸었다.','Ben and Lily did not go to the feeders right away after the feeders were hung.|Ben과 Lily는 먹이통이 걸린 후 바로 다가가지 않았다.'],ans:3,
+ex:'Then, we hung the honey-log feeders on trees <b>near</b> the bears’ habitat → 곰의 서식지 ‘근처’ 나무에 걸었으므로 ④ 불일치. ⑤ After a while, Ben and Lily approached the feeders → 바로 가지 않았으므로 일치.',why:['일치','일치','일치','불일치 — 서식지 근처 나무','일치 — After a while']},
+{n:5,pid:'M9-37',type:'content',prompt:'다음 글의 내용과 일치하지 <b>않는</b> 것은?',body:'@',en:1,
+opts:['People tried to understand the universe even before the invention of the telescope.|사람들은 망원경이 발명되기 전에도 우주를 이해하려고 노력했다.','Copernicus based his conclusion on measurements he took with his naked eye.|코페르니쿠스는 맨눈으로 한 측정에 근거해 결론을 내렸다.','Galileo’s telescope observations cast serious doubt on Copernicus’ theory.|갈릴레오의 망원경 관측은 코페르니쿠스의 이론에 심각한 의문을 제기했다.','Technological progress made it possible to develop the telescope in the early 1600s.|기술 발전 덕분에 1600년대 초에 망원경을 개발할 수 있었다.','Copernicus’ ideas were not widely accepted when he first suggested them.|코페르니쿠스의 생각은 처음 제시되었을 때 널리 받아들여지지 않았다.'],ans:2,
+ex:'He also confirmed that Copernicus’ theory was correct → 갈릴레오는 코페르니쿠스의 이론이 옳음을 확인했으므로 ③ 불일치. ② took measurements by eye 일치, ⑤ Despite widespread objections 일치.',why:['일치','일치','불일치 — 이론이 옳음을 확인','일치','일치 — widespread objections']},
+{n:6,pid:'4-7',type:'imp',prompt:'밑줄 친 <u>Too many scientific papers fall silently in the woods.</u>가 다음 글에서 의미하는 바로 가장 적절한 것은?',body:'@',reps:[['Too many scientific papers fall silently in the woods.','[[u|Too many scientific papers fall silently in the woods.]]']],en:1,
+opts:['A large number of scientific papers are rejected before they are published.|많은 수의 과학 논문이 출판되기 전에 거절된다.','A great deal of published research never really gets through to the people it was written for.|출판된 연구의 상당수가 그것이 쓰인 대상인 사람들에게 실제로 전달되지 못한다.','Many scientists publish their findings without completing their experiments.|많은 과학자들이 실험을 끝내지 않은 채 연구 결과를 발표한다.','Most scientific findings are ignored because they have little practical value.|대부분의 과학적 발견은 실용적 가치가 거의 없어서 무시된다.','Scientific papers are often written about subjects that are too remote from daily life.|과학 논문은 일상생활과 너무 동떨어진 주제에 대해 쓰이는 경우가 많다.'],ans:1,
+ex:'듣는 이 없는 숲속의 나무 = 소리가 없음. 출판된 논문도 의도된 독자가 받아들이고 이해하지 못하면 쓸모없다 → ②. ④ 무시되는 이유를 ‘실용적 가치 부족’으로 잘못 제시, ① 출판 전 거절이 아니라 출판 후의 문제.',why:['출판 전 거절이 아니라 출판 후의 문제','정답','실험 미완성 이야기는 없음','이유가 틀림','본문에 없는 내용']},
+{n:7,pid:'13-9',type:'word',prompt:'다음 글의 밑줄 친 부분 중, 문맥상 낱말의 쓰임이 적절하지 <b>않은</b> 것은?',body:'@',reps:[['an impressive','an [[1|impressive]]'],['great difficulties','great [[2|difficulties]]'],['system adjusted','system [[3|adjusted]]'],['again confronted with','again [[4|relieved of]]'],['could reverse','could [[5|reverse]]']],nolabel:1,
+opts:['impressive|인상적인','difficulties|어려움','adjusted|적응했다','relieved of|~에서 벗어난','reverse|뒤집다'],ans:3,
+ex:'반전 안경을 벗자 다시 문제에 ‘직면했다’(예: 무언가를 잡으려 할 때 엉뚱한 손을 사용) → ④ relieved of(~에서 벗어난)를 <b>confronted with</b>로 고쳐야 한다.',why:['맞음','맞음','맞음','relieved of → confronted with','맞음']},
+{n:8,pid:'L2-1',type:'word',prompt:'다음 글의 밑줄 친 부분 중, 문맥상 낱말의 쓰임이 적절하지 <b>않은</b> 것은?',body:'@',reps:[['didn’t intend','didn’t [[1|intend]]'],['felt rushed','felt [[2|rushed]]'],['are manipulative','are [[3|manipulative]]'],['cause financial','cause [[4|financial]]'],['process complicated','process [[5|convenient]]']],nolabel:1,
+opts:['intend|의도하다','rushed|재촉받은','manipulative|조작적인','financial|재정적인','convenient|편리한'],ans:4,
+ex:'기업이 무료 체험 종료를 일부러 알리지 않거나 해지 과정을 ‘복잡하게’ 만들어 사용자가 원치 않아도 요금을 내게 됨 → ⑤ convenient를 <b>complicated</b>로 고쳐야 한다.',why:['맞음','맞음','맞음','맞음','convenient → complicated']},
+{n:10,pid:'11-5',type:'gram',prompt:'다음 글의 밑줄 친 부분 중, 어법상 <b>틀린</b> 것은?',body:'@',reps:[['which can be','[[1|which]] can be'],['has suggested','[[2|have suggested]]'],['obtainable','[[3|obtainable]]'],['growing crops','[[4|growing]] crops'],['that epidemic','[[5|that]] epidemic']],nolabel:1,
+opts:['which','have suggested','obtainable','growing','that'],ans:1,
+ex:'주어는 Examination(단수)이고 of human remains from early hunter-gatherer societies는 수식어 → ② have suggested를 <b>has suggested</b>로. ① 계속적 용법 주격 관계대명사, ③ food를 뒤에서 수식하는 형용사(구), ④ 분사구문, ⑤ it was ~ that 강조 구문.',why:['계속적 용법 주격 관계대명사 (맞음)','have → has (주어 Examination 단수)','food를 뒤에서 수식하는 형용사 (맞음)','분사구문 (맞음)','it was ~ that 강조 구문 (맞음)']},
+{n:11,pid:'L2-4',type:'gram',prompt:'다음 글의 밑줄 친 부분 중, 어법상 <b>틀린</b> 것끼리 짝지은 것은?',body:'@',reps:[['is being conducted','[[a|are being conducted]]'],['which banned','[[b|that]] banned'],['limiting companies','[[c|limited]] companies'],['reading terms','[[d|reading]] terms'],['patterns is also','patterns [[e|is]] also']],
+opts:['ⓐ, ⓑ, ⓓ','ⓐ, ⓒ, ⓔ','ⓑ, ⓒ, ⓓ','ⓐ, ⓑ, ⓒ','ⓒ, ⓓ, ⓔ'],ans:3,
+ex:'ⓐ 주어 extensive research(불가산·단수) → <b>is</b> being conducted<br>ⓑ 콤마 뒤 계속적 용법에는 that 불가 → <b>which</b><br>ⓒ 규제가 관행을 ‘제한하는’ 능동 관계 → <b>limiting</b> (분사구문)<br>ⓓ being, recognizing과 병렬인 동명사 → 맞음<br>ⓔ 동명사구 주어(Developing ~) → 단수 is 맞음<br>틀린 것: ⓐ, ⓑ, ⓒ → ④'},
+{n:12,pid:'M9-35',type:'irr',prompt:'다음 글에서 전체 흐름과 관계 <b>없는</b> 문장은?',body:'Our number one criterion for how we care for our pets should be, “Is this what they actually need? How is it impacting them?” rather than, “What do I want?” [[1]] For example, we have encountered many dog owners who bathe their dogs religiously multiple times a week because they want to avoid the ‘doggy’ smell, but veterinary dermatologists warn against such practices, as they are not good for a dog’s skin. [[2]] In fact, most dogs enjoy being bathed, so frequent baths can be a pleasant way for owners to bond with their pets. [[3]] If someone is really concerned about their dog’s smell, they can use waterless shampoo and thoroughly brush their dog every day but keep the baths down to once or twice a week at most. [[4]] Unless they have a skin condition for which a vet has prescribed medicated baths, most dogs don’t need to be bathed on a regular basis. [[5]] Even dogs with thick, heavy coats generally only need baths every 6 to 8 weeks.',
+opts:['①','②','③','④','⑤'],ans:1,ex:'반려동물 관리의 기준은 주인의 바람이 아니라 동물의 필요여야 하며, 개를 너무 자주 목욕시키는 것은 피부에 좋지 않다는 흐름 → 잦은 목욕이 즐거운 교감 방법이라는 ②는 흐름과 무관(오히려 반대). ② 해석: 사실 대부분의 개는 목욕을 즐기므로, 잦은 목욕은 주인이 반려동물과 교감하는 즐거운 방법이 될 수 있다.'},
+{n:13,pid:'6-9',type:'irr',prompt:'다음 글에서 전체 흐름과 관계 <b>없는</b> 문장은?',body:'@',reps:[['Survival and reproduction are','[[1]] Survival and reproduction are'],['Groups can share','[[2]] Groups can share'],['In particular, if','[[3]] In particular, if'],['Belongingness will','[[4]] Nevertheless, individuals who rely too heavily on their groups often lose the ability to make decisions on their own. [[5]] Belongingness will']],
+opts:['①','②','③','④','⑤'],ans:3,ex:'소속 욕구가 생존과 번식에 유리하게 작용했다는 글 → 집단에 지나치게 의존하는 개인의 판단력 상실을 말하는 ④는 흐름과 무관. ④ 해석: 그럼에도 불구하고, 집단에 너무 크게 의존하는 개인은 흔히 스스로 결정하는 능력을 잃는다.'},
+{n:14,pid:'L2-2',type:'blank',prompt:'다음 빈칸에 들어갈 말로 가장 적절한 것은?',body:'Another common type of dark pattern is known as “hidden fees.” This design suddenly adds extra fees at the last step of the ordering process. On the final page, consumers are surprised to discover additional charges, such as shipping or processing fees, which the seller has added to increase the final cost of the order. “Confirm-shaming” is another online trick that users should be aware of. This technique manipulates users into feeling ashamed for cancelling their membership or requesting a refund for an order. Companies use this to keep their members subscribed, even if it goes against the members’ intentions. For example, when users want to cancel their subscription, they are offered two options: “I want to keep my benefits” and “I want to give up my benefits.” The first option is presented in a(n) [[_]] way, while the second option seems like a bad choice.',en:1,
+opts:['attractive|매력적인','neutral|중립적인','confusing|혼란스러운','unpleasant|불쾌한','honest|정직한'],ans:0,
+ex:'confirm-shaming은 해지하려는 사용자를 부끄럽게 만들어 구독을 유지시키는 기법 → 첫 번째(혜택 유지) 선택지는 ‘매력적으로’ 제시되고 두 번째는 나쁜 선택처럼 보이게 함 → ① attractive (원문 appealing). (while 대조 구문: attractive ↔ a bad choice)'},
+{n:15,pid:'M9-34',type:'blank',prompt:'다음 빈칸에 들어갈 말로 가장 적절한 것은?',body:'If our bodies know best, why are they easily injured when we do something so seemingly natural as running? On the one hand, running seems very easy, but that is only because our bodies are so very good at it. The most powerful supercomputer on the planet cannot administer the enormous number of computations it takes to run, untethered, on two legs. Wherever our running intelligence is, running is not all conscious to us and is so complicated that only the T-1000 Terminators of our imagination are able to do it. Because our running knowledge is buried so deeply within muscle fibres, cells and our DNA, we have to accept that we cannot fully explain its complexities. That doesn’t mean our bodies don’t know how to do it. We may feel our way towards understanding the alchemy of running by learning how to use our senses, getting them firing, and seeing what they are capable of, and [[_]].',en:1,
+opts:['training our conscious minds to control every step we take|우리의 의식이 우리가 내딛는 모든 걸음을 통제하도록 훈련하는 것','admitting that computers will someday explain how we run|컴퓨터가 언젠가 우리가 달리는 방식을 설명할 것이라고 인정하는 것','realizing that running is a skill learned mainly through instruction|달리기가 주로 가르침을 통해 배우는 기술이라는 것을 깨닫는 것','believing that frequent injuries prove our bodies run inefficiently|잦은 부상이 우리 몸이 비효율적으로 달린다는 증거라고 믿는 것','admitting that our physical selves hold a wisdom our minds cannot reach|우리의 신체가 우리의 정신이 닿을 수 없는 지혜를 지니고 있음을 인정하는 것'],ans:4,
+ex:'달리기 지식은 근육·세포·DNA 깊숙이 묻혀 있어 의식적으로 다 설명할 수 없지만, 몸은 그것을 알고 있다 → 몸이 우리(의식)보다 달리기를 더 잘 안다는 것을 받아들이는 것 ⑤ (원문 accepting that our bodies know more about running than we ever will). ① 의식적 통제는 반대, ② 슈퍼컴퓨터도 계산하지 못한다고 함.'},
+{n:16,pid:'13-13',type:'blank',prompt:'다음 빈칸에 들어갈 말로 가장 적절한 것은?',body:'@',reps:[['how long things are going to take','[[_]]']],en:1,
+opts:['which tasks matter most to you|어떤 과제가 자신에게 가장 중요한지','why people tend to be over-optimistic|사람들이 왜 지나치게 낙관적인 경향이 있는지','when your energy is at its highest|언제 자신의 에너지가 가장 높은지','how to avoid tasks that seem difficult|어려워 보이는 과제를 피하는 방법','the amount of time each task will actually require|각 과제가 실제로 필요로 할 시간의 양'],ans:4,
+ex:'할 일 목록에 필요한 시간을 추정하는 습관을 들이고, 과제를 가용 시간에 맞추라는 내용 → 각 과제가 실제로 얼마나 걸릴지 아는 것 ⑤ (원문 how long things are going to take). ② 과도한 낙관은 문제점으로 언급될 뿐.'},
+{n:17,pid:'M9-33',type:'blank',prompt:'다음 빈칸에 들어갈 말로 가장 적절한 것은?',body:'The ancient Greeks felt that the visual artist’s goal was to copy visual experience. This approach appears in the realism of ancient Greek sculpture and pottery. We must sadly note that, due to the action of time and weather, no paintings from ancient Greek artists exist today. We can only surmise their quality based on tales such as that of Zeuxis and Parrhasios, the obvious skill in ancient Greek sculpture, and in drawings that survive on ancient Greek pottery. This definition of art as copying reality has a problem, though. Jackson Pollock, a leader in the New York School of the 1950s, intentionally did not copy existing objects in his art. While painting these works, Pollock and his fellow artists would consciously avoid making marks or passages that resembled recognizable objects. They succeeded at making artwork that [[_]], thus demonstrating that the ancient Greek view of art as mimesis — simple copying — does not sufficiently define art.',en:1,
+opts:['imitated reality more precisely than before|이전보다 현실을 더 정확하게 모방한','did not represent any recognizable object|알아볼 수 있는 어떤 대상도 재현하지 않은','survived the destructive action of time and weather|시간과 날씨의 파괴적 작용을 견뎌 낸','followed the tradition of ancient Greek pottery|고대 그리스 도자기의 전통을 따른','was mainly intended to appeal to the general public|주로 일반 대중의 마음을 끌기 위해 의도된'],ans:1,
+ex:'폴록과 동료 화가들은 의도적으로 기존 사물을 모방하지 않고 알아볼 수 있는 대상과 닮은 표시를 피했다 → 어떤 알아볼 수 있는 대상도 재현하지 않는 작품 ② (원문 did not copy anything). 이로써 ‘예술 = 모방’이라는 정의의 한계가 드러남.'},
+{n:18,pid:'13-1',type:'blank',prompt:'다음 빈칸에 들어갈 말로 가장 적절한 것은?',body:'@',reps:[['return to our personal default level of well-being','[[_]]']],en:1,
+opts:['settle back into our normal emotional state|평소의 정서 상태로 다시 자리 잡는다','become more sensitive to small changes in mood|기분의 작은 변화에 더 민감해진다','remain happy for as long as good things last|좋은 일이 지속되는 한 계속 행복하다','move permanently in a new emotional direction|새로운 정서적 방향으로 영원히 이동한다','forget the experiences that once shaped our mood|한때 기분을 형성했던 경험을 잊는다'],ans:0,
+ex:'좋은 일·나쁜 일에 적응하여 결국 개인의 기준선으로 끌려 돌아온다(pulled toward our baseline) → ① 평소의 정서 상태로 돌아온다 (원문 return to our personal default level of well-being). ④ 새로운 방향으로 완전히 날려가지 않는다는 본문과 반대, ③ 첫사랑의 행복감도 사라진다고 함.'},
+{n:19,pid:'12-1',type:'blank',prompt:'다음 빈칸에 들어갈 말로 가장 적절한 것은?',body:'@',reps:[['more open to sharing what we have','[[_]]']],en:1,
+opts:['more generous with our limited possessions|얼마 안 되는 소유물에 대해 더 너그러운','more anxious to protect what belongs to us|자신에게 속한 것을 보호하려고 더 애쓰는','less dependent on the help of other people|다른 사람들의 도움에 덜 의존하는','more suspicious of strangers in need|도움이 필요한 낯선 사람을 더 의심하는','less interested in cooperating with others|다른 사람들과 협력하는 데 관심이 덜한'],ans:0,
+ex:'가진 것이 적은 유목 부족은 생존이 나눔에 달려 있어 기꺼이 나눈다 ↔ 많이 가질수록 덜 나누고 싶어 한다(the less we want to share) → 적게 가질 때는 얼마 안 되는 소유물에 더 너그럽다 ① (원문 more open to sharing what we have).'},
+{n:20,pid:'M9-38',type:'insert',given:'As these communities grew in size, though, the inadequacies of this system would become evident.',prompt:'글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?',body:'To harness the full potential of units of measurement, we need some degree of consistency. [[(1)]] Subjective measures contain useful knowledge, but this can be difficult to share, based as it is on an individual’s experience. [[(2)]] The historian of science Theodore M. Porter describes measurement as a ‘technology of distance’: a tool that uses shared rules to bridge differences of culture and geography, allowing for the exchange of information. [[(3)]] Following this logic, if measurement is another sort of language, then just as with words, individual units need reliable definitions in order to communicate. [[(4)]] In the earliest societies, these definitions might need to be shared no more widely than a single settlement, meaning that the definition can be no more complex than knowing that a unit was equal to a certain body part. [[(5)]] Imagine a disagreement over trade or tribute; it is a moment of conflict that demands greater consistency in measurement.',
+opts:['①','②','③','④','⑤'],ans:4,ex:'주어진 문장의 these communities, this system(신체 부위 기준의 단순한 정의)이 가리키는 대상은 ⑤ 앞 문장(초기 사회, 한 정착지, 신체 부위). 공동체가 커지자 부적절함이 드러났다 → ⑤ 뒤의 거래·공물 분쟁 예시로 연결.'},
+{n:21,pid:'M9-39',type:'insert',given:'However, the ants don’t eat these leaves.',prompt:'글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?',body:'With millions of members in a colony, leaf-cutter ants cultivate their own food. [[(1)]] Just like humans, they’re farmers. [[(2)]] Some of the ants set forth from the nest to find fresh vegetation; when they find it, they chew off large pieces that they carry back to the nest. [[(3)]] Instead, smaller worker ants take the pieces of leaves, chew them into smaller pieces, and use these as fertilizer to grow fungus in large underground ‘gardens.’ [[(4)]] The ants feed the fungus, and the fungus blossoms into small fruiting bodies which the ants later eat. [[(5)]] Using this successful farming strategy, the ants build enormous nests underground, something spanning hundreds of square meters. Just like humans, they have perfected an agricultural civilization.',
+opts:['①','②','③','④','⑤'],ans:2,ex:'개미들이 잎을 잘라 둥지로 가져오지만(③ 앞) 이 잎을 먹지는 않는다(주어진 문장) → 대신(Instead) 작은 일개미들이 잎을 비료로 써서 균류를 기른다(③ 뒤). Instead가 결정적 단서.'},
+{n:22,pid:'4-5',type:'insert',given:'Other animals have senses that are even harder to categorize.',prompt:'글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?',body:'Consider the seemingly simple question How many senses are there? Around 2,370 years ago, Aristotle wrote that there are five, in both humans and animals — sight, hearing, smell, taste, and touch. [[(1)]] However, according to the philosopher Fiona Macpherson, there are reasons to doubt it. [[(2)]] For a start, Aristotle missed a few in humans: the perception of your own body which is different from touch and the sense of balance which has links to both touch and vision. [[(3)]] Many vertebrates have a different sense system for detecting odors. [[(4)]] Some snakes can detect the body heat of their prey. [[(5)]] These examples tell us that “senses cannot be clearly divided into a limited number of specific kinds,” Macpherson wrote in The Senses. Instead of trying to push animal senses into Aristotelian buckets, we should study them for what they are.',
+opts:['①','②','③','④','⑤'],ans:2,ex:'③ 앞까지는 아리스토텔레스가 ‘인간’에게서 놓친 감각, ③ 뒤부터는 척추동물·뱀 등 ‘다른 동물’의 감각 → 화제 전환 문장(Other animals ~ even harder to categorize)은 ③.'},
+{n:23,pid:'6-11',type:'insert',given:'But the need to predict goes deeper than this; it influences every part of our lives.',prompt:'글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?',body:'The whole of human society operates on knowing the future weather. [[(1)]] For example, farmers in India know when the monsoon rains will come next year and so they know when to plant the crops. [[(2)]] Farmers in Indonesia know there are two monsoon rains each year, so next year they can have two harvests. [[(3)]] This is based on their knowledge of the past, as the monsoons have always come at about the same time each year in living memory. [[(4)]] Our houses, roads, railways, airports, offices, and so on are all designed for the local climate. [[(5)]] For example, in England all the houses have central heating, as the outside temperature is usually below 20°C, but no air-conditioning, as temperatures rarely go beyond 26°C, while in Australia the opposite is true: most houses have air-conditioning but rarely central heating.',
+opts:['①','②','③','④','⑤'],ans:3,ex:'농부들의 사례(과거 지식에 기반한 예측) 뒤에, 예측의 필요성은 그보다 더 깊어 삶의 모든 부분에 영향을 준다(주어진 문장) → ④ 뒤 집·도로·공항 등이 모두 지역 기후에 맞춰 설계된다는 확장 사례로 연결.'},
+{n:24,pid:'M9-36',type:'order',given:'The central concerns of mathematics are not numbers, but patterns, structures, symmetries and connections. Take, for example, the Sudoku puzzles that appear daily in newspapers.',prompt:'주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은?',body:'[[P:A]] One Irish daily paper publishes these puzzles with the statement ‘There’s no maths involved, simply use reasoning and logic!’ It seems that even the idea that something might be spoiled by mathematics is enough to scare off potential solvers! Could you imagine the promotion of an exhibition in the National Gallery with the slogan ‘No art involved, just painting and sculpture’? If you can do Sudoku, you can do maths![[P:B]] They could be nine letters or nine shapes. It’s the pattern that matters.[[P:C]] The objective is to complete a 9 × 9 grid, starting from a few given numbers or clues, while ensuring that each row, each column and each 3 × 3 block contains all the digits from 1 to 9 once and only once. But the numerical values of the digits are irrelevant; what is important is that there are nine distinct symbols.',
+opts:['(A) – (C) – (B)','(B) – (A) – (C)','(B) – (C) – (A)','(C) – (A) – (B)','(C) – (B) – (A)'],ans:4,ex:'스도쿠 예시 제시 → (C) 9×9 격자 규칙, 숫자 값은 무관하고 서로 다른 아홉 개 기호가 중요 → (B) They(= nine distinct symbols)는 글자·도형이어도 됨, 중요한 건 패턴 → (A) these puzzles를 ‘수학 없음’이라 홍보하는 신문의 아이러니. (C)-(B)-(A) ⑤'},
+{n:25,pid:'L1-1',type:'order',given:'July 29, Monday — Our club arrived at the Free Animals sanctuary. Jane, the staff member in charge of animal care, welcomed us with a big smile and gave us a tour of the facility.',prompt:'주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은?',body:'[[P:A]] While cleaning the habitats, we checked if there were any hazards that could harm the animals. Then, we helped prepare the food by cutting up fruits and vegetables and dividing them into several large baskets.[[P:B]] For old elephants with weak teeth, we chopped bananas instead of the sugarcane that they usually eat. Spending the whole day helping out with the animals was an incredible experience for me. It was a rewarding experience, and I was impressed with the attention the staff members gave to all the animals.[[P:C]] It was amazing to see bears and elephants moving freely in a large field. Our tasks for the day included cleaning the shelter and preparing food for the animals.',
+opts:['(A) – (C) – (B)','(B) – (A) – (C)','(B) – (C) – (A)','(C) – (A) – (B)','(C) – (B) – (A)'],ans:3,ex:'시설 견학 → (C) 넓은 들판의 곰·코끼리, 오늘의 일 = 청소 + 먹이 준비 → (A) 청소하며 위험 요소 확인, 그다음(Then) 과일·채소 손질 → (B) 이가 약한 코끼리를 위한 바나나, 하루 소감. (C)-(A)-(B) ④'},
+{n:27,pid:'M9-40',type:'sum',prompt:'다음 글의 내용을 한 문장으로 요약하고자 한다. 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?',body:'@',summ:'From an evolutionary viewpoint, self-esteem functions as a(n) [[A]] system that constantly checks how well we are [[B]] by others and warns us when our social bonds are at risk.',
+opts:['tracking|추적하는 … embraced|받아들여진','tracking|추적하는 … imitated|모방된','defensive|방어적인 … embraced|받아들여진','monitoring|감시하는 … criticized|비판받는','conscious|의식적인 … rewarded|보상받는'],ans:0,combo:1,
+ex:'자존감 = 관계의 질을 감시하는 기제(monitoring mechanism), 타인의 반응을 살펴 우리의 포함(수용) 상태 변화를 경고 → (A) tracking(원문 monitoring), (B) embraced(원문 accepted / inclusion) ①. ④ criticized: 비판 여부가 아니라 수용·배제 여부를 점검, ⑤ conscious: 이 체계는 대개 ‘무의식적으로’ 작동.'},
+{n:28,pid:'3-11',type:'sum',prompt:'다음 글의 내용을 한 문장으로 요약하고자 한다. 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?',body:'@',summ:'Unlike in writing, where unnecessary words should be [[A]], in speaking more words are needed, since listeners, who cannot [[B]] what they have missed, need ideas to be explained more fully.',
+opts:['added|추가된 … review|복습하다','eliminated|제거된 … revisit|다시 찾아가다','eliminated|제거된 … predict|예측하다','emphasized|강조된 … revisit|다시 찾아가다','repeated|반복된 … ignore|무시하다'],ans:1,combo:1,
+ex:'글쓰기에서는 가능한 한 많은 단어를 없애라(Get rid of) / 독자는 다시 읽을 수 있지만 청자는 다시 들을 수 없다(cannot rehear) → (A) eliminated, (B) revisit ②.'}
+];
+
+const LET={a:'ⓐ',b:'ⓑ',c:'ⓒ',d:'ⓓ',e:'ⓔ'};
+function exMark(s){return esc(s).replace(/\[\[_\]\]/g,'<span class="bq"></span>').replace(/\[\[\((\d)\)\]\]/g,(m,n)=>`<span class="slot">( ${CIRC[n-1]} )</span>`).replace(/\[\[(\d)\]\]/g,(m,n)=>`<span class="slot">${CIRC[n-1]}</span>`).replace(/\[\[(\d)\|(.+?)\]\]/g,(m,n,w)=>`<span class="slot">${CIRC[n-1]}</span><u>${w}</u>`).replace(/\[\[([a-e])\|(.+?)\]\]/g,(m,n,w)=>`<span class="slot">${LET[n]}</span><u>${w}</u>`).replace(/\[\[u\|(.+?)\]\]/g,'<u>$1</u>').replace(/\[\[([AB])\]\]/g,'<b class="tag">($1)</b> <span class="bq" style="min-width:5em"></span>').replace(/\[\[P:([ABC])\]\]/g,'</p><p><span class="tag">($1)</span>');}
+function examQ(e){const p=P.find(q=>q.id===e.pid)||P[0];let t;
+  if(e.body==='@'){t=p.en;(e.reps||[]).forEach(([f,r])=>{if(t.indexOf(f)<0)console.warn('exam rep miss',e.n,f);t=t.replace(f,r);});}else t=e.body;
+  let body=(e.given?`<p class="given">${esc(e.given)}</p>`:'')+`<p>${exMark(t)}</p>`.replace('<p></p>','');
+  if(e.summ)body+=`<p class="given">${exMark(e.summ)}</p>`;
+  const sp=s=>s.split(' … ').map(x=>x.split('|'));
+  let opts,head='';
+  if(e.combo){const pr=e.opts.map(sp);opts=pr.map(c=>`<span class="combo" style="--k:2"><span>${esc(c[0][0])}</span><span>${esc(c[1][0])}</span></span>`);head=`<div class="opt headrow"><span class="cn"></span><span class="combo" style="--k:2"><span>(A)</span><span>(B)</span></span></div>`;}
+  else opts=e.opts.map(o=>esc(o.split('|')[0]));
+  const list=`<ul class="gl">${e.opts.map((o,j)=>{let en,ko;if(e.combo){const c=sp(o);en=`(A) ${c[0][0]} · (B) ${c[1][0]}`;ko=`${c[0][1]} · ${c[1][1]}`;}else{[en,ko]=o.split('|');}
+    const why=e.why?e.why[j]:'';return `<li>${CIRC[j]} <span class="enl">${esc(en)}</span>${ko?`<br><span class="kos">${esc(ko)}</span>`:''}<br>${j===e.ans?'<b class="okc">✓ 정답</b>':'<b class="bad">✗</b>'} ${esc(why&&why!=='정답'?why:'')}</li>`}).join('')}</ul>`;
+  const showList=!(e.type==='insert'||e.type==='irr'||e.type==='order'||(e.type==='gram'&&!e.nolabel));
+  const explain=`<p class="exh">📝 실전 모의고사 ${e.n}번 해설</p><p>${e.ex}</p>${showList?list:''}`+koBox(p);
+  return {prompt:e.prompt,body,opts,ans:e.ans,explain,head,en:!!e.en,nolabel:!!e.nolabel,p,type:e.type,label:`실전 모의 ${e.n}번`,en_n:e.n};}
 function nextQ(){
-  const z=st.quiz;HARD=!!z.hard;
+  const z=st.quiz;HARD=!!z.hard;EXL=z.exl!==false;
+  if(z.exam){z.done=false;z.pick=null;if(!z.queue.length){z.q=null;return}const e=z.queue.shift();z.q=examQ(e);z.last=z.q.p;return}
   if(z.mode){z.done=false;z.pick=null;
     while(z.queue.length){const k=z.queue.shift();const w=wrongs.find(x=>x.k===k);if(!w)continue;const p=P.find(x=>x.id===w.id);if(!p)continue;
       let q=null;if(z.mode==='new'){for(let i=0;i<10&&!q;i++)q=GEN[w.type](p);}
@@ -1507,15 +1593,27 @@ function renderNotes(){const N=NOTES[st.noteU];
 function render(){
   if(st.view==='home')renderHome();else if(st.view==='study')renderStudy();else if(st.view==='notes')renderNotes();else renderQuiz();
 }
+const VER='버전 25 (실전 모의 탭 · 실전 난이도)';
+let examRes=store.get('oly-exam',{});
+function examHome(){const done=EXAM.filter(e=>examRes[e.n]!==undefined),ok=done.filter(e=>examRes[e.n]);
+  let h=`<section class="panel"><h2>📝 실전 모의고사</h2><p class="sub">시험지 순서 그대로 풀거나, 섞어서 풀 수 있어요. 문항을 누르면 그 문제만 풀어요.</p>
+  <div class="stats" style="margin:4px 0 12px"><span>푼 문항<b>${done.length}/${EXAM.length}</b></span><span>맞힌 문항<b>${ok.length}</b></span>${examRes.best!==undefined?`<span>최고 기록<b>${examRes.best}/${EXAM.length}</b></span>`:''}</div>
+  <button class="btn" data-act="exam" data-m="order">번호 순서대로 풀기</button><button class="btn" style="background:transparent;color:var(--blue);border:1px solid var(--blue)" data-act="exam" data-m="shuffle">섞어서 풀기</button>${done.length>ok.length?`<button class="btn" style="background:transparent;color:var(--bad);border:1px solid var(--bad)" data-act="exam" data-m="wrong">틀린 문항만 다시 풀기 (${done.length-ok.length})</button>`:''}</section>`;
+  h+=`<section class="unit"><h3>문항<span>번호를 누르면 그 문제만 풀어요</span></h3>`;
+  EXAM.forEach(e=>{const p=P.find(q=>q.id===e.pid);const r=examRes[e.n];
+    h+=`<button class="row${r?' done':''}" data-act="exam1" data-n="${e.n}"><span class="num">${e.n}</span><span><span class="k">${TN[e.type]}</span><span class="t">${p?esc(PL(p)):''}</span></span><span class="acc">${r===undefined?'':r?'✓ 맞힘':'<span style="color:var(--bad)">✗ 틀림</span>'}</span></button>`;});
+  return h+'</section>';}
 function renderHome(){
   const tot=Object.values(stats).reduce((a,s)=>({c:a.c+s.c,t:a.t+s.t}),{c:0,t:0});
   const memoN=P.filter(p=>memo[p.id]).length;
   const TP=P.filter(p=>p.set===TAB());
-  let h=`<header class="hero"><h1>영어 중간고사 대비</h1><div class="tabs">${[['tb','교과서'],['mock','9월 모의고사'],['oly','올림포스']].map(([k,n])=>`<button class="tabb" data-act="tab" data-k="${k}" aria-pressed="${TAB()===k}">${n}</button>`).join('')}</div><p class="sub">${({tb:'공통영어2 교과서 1·2과 본문 (시험 범위)',mock:'26년 고1 9월 모의고사 31~40번 · 어법 제외 (빈칸·내용 일치·함의·요약·제목·주제 비중 2배)',oly:'올림포스 3·4·6·11·12·13강 홀수'})[TAB()]} · 지문 ${TP.length}개</p>
+  let h=`<header class="hero"><h1>영어 중간고사 대비</h1><div class="tabs">${[['tb','교과서'],['mock','9월 모의'],['exam','실전 모의'],['oly','올림포스']].map(([k,n])=>`<button class="tabb" data-act="tab" data-k="${k}" aria-pressed="${TAB()===k}">${n}</button>`).join('')}</div><p class="sub">${({tb:'공통영어2 교과서 1·2과 본문 (시험 범위)',mock:'26년 고1 9월 모의고사 31~40번 · 어법 제외 (빈칸·내용 일치·함의·요약·제목·주제 비중 2배)',oly:'올림포스 3·4·6·11·12·13강 홀수',exam:'2026 2학기 1차 대비 공통영어2 실전 모의고사 · 외부지문·서술형 제외'})[TAB()]}${TAB()==='exam'?` · ${EXAM.length}문항`:` · 지문 ${TP.length}개`}</p>
   <div class="stats"><span>외운 지문<b>${TP.filter(p=>memo[p.id]).length}/${TP.length}</b></span><span>푼 문제<b>${tot.t}</b></span>${tot.t?`<span>정답률<b>${Math.round(tot.c/tot.t*100)}%</b></span>`:''}</div></header>`;
+  if(TAB()==='exam'){h+=examHome();h+=`<p class="sub" style="text-align:center;margin-top:32px">${VER}</p>`;app.innerHTML=h;return}
   h+=`<section class="panel"><h2>문제 풀기</h2><p class="sub">문제는 풀 때마다 새로 만들어져서 끝없이 나와요.</p>
   <p class="lbl">문제 유형</p><div class="chips">${TYPES.filter(t=>!(TAB()==='mock'&&t.k==='gram')).map(t=>`<button class="chip" data-act="type" data-k="${t.k}" aria-pressed="${cfg.types.includes(t.k)}">${t.name}</button>`).join('')}</div>
   <p class="lbl">범위</p><div class="chips">${TAB()==='mock'?(()=>{const ms=P.filter(p=>p.set==='mock');const sel=MSEL();return `<button class="chip" data-act="mall" aria-pressed="${ms.every(p=>sel.includes(p.id))}">전체</button>`+ms.map(p=>`<button class="chip" data-act="mpick" data-id="${p.id}" aria-pressed="${sel.includes(p.id)}">${p.n}번</button>`).join('');})():UNITS.filter(u=>u.set===TAB()).map(u=>`<button class="chip" data-act="unit" data-u="${u.u}" aria-pressed="${cfg.units.includes(u.u)}">${UL(u.u)}</button>`).join('')}</div>
+  <label class="tog"><input type="checkbox" data-act="exl" ${cfg.exl!==false?'checked':''}>🎯 실전 난이도 (시험지 수준: 정답은 바꿔 쓴 표현, 오답은 헷갈리는 것 위주)</label>
   <label class="tog hardtog"><input type="checkbox" data-act="hard" ${cfg.hard?'checked':''}>🔥 난이도 극상 (헷갈리는 선지만, 순서 4덩어리${TAB()==='mock'?'':', 어법 개수·짝짓기'})</label>
   <label class="tog"><input type="checkbox" data-act="weak" ${cfg.weak?'checked':''}>자주 틀린 지문을 더 자주 내기</label>
   <button class="btn" data-act="start" ${(!cfg.types.filter(t=>!(TAB()==='mock'&&t==='gram')).length||(TAB()==='mock'?!MSEL().length:!UNITS.some(u=>u.set===TAB()&&cfg.units.includes(u.u))))?'disabled':''}>문제 풀기 시작</button></section>`;
@@ -1531,7 +1629,7 @@ function renderHome(){
       h+=`<button class="row${memo[p.id]?' done':''}" data-act="open" data-id="${p.id}"><span class="num">${p.n}</span><span><span class="k">${p.k}</span><span class="t">${esc(p.t)}</span></span><span class="acc">${memo[p.id]?'외움<br>':''}${s&&s.t?Math.round(s.c/s.t*100)+'%, '+s.t+'문제':''}</span></button>`;});
     h+='</section>';
   });
-  h+=`<p style="margin-top:32px;text-align:center"><button class="link" data-act="reset">풀이 기록과 외움 표시 초기화</button></p><p class="sub" style="text-align:center;margin-top:8px">버전 23 (모의고사 핵심 정리)</p>`;
+  h+=`<p style="margin-top:32px;text-align:center"><button class="link" data-act="reset">풀이 기록과 외움 표시 초기화</button></p><p class="sub" style="text-align:center;margin-top:8px">${VER}</p>`;
   app.innerHTML=h;
 }
 function studyBody(p){
@@ -1575,9 +1673,10 @@ function renderStudy(){
 }
 function renderQuiz(){
   const z=st.quiz,q=z.q;
+  if(!q&&z.exam){if(z.total===EXAM.length&&!z.saved){z.saved=1;if(examRes.best===undefined||z.c>examRes.best){examRes.best=z.c;store.set('oly-exam',examRes);}}app.innerHTML=`<div class="top"><button class="ghost" data-act="home">목록으로</button></div><section class="panel" style="text-align:center;padding:36px 16px"><h2>📝 실전 모의고사 끝!</h2><p class="sub">${z.t}문제 중 <b>${z.c}문제</b> 맞혔어요. (${z.t?Math.round(z.c/z.t*100):0}점 환산)</p><p class="sub">틀린 문제는 오답 노트에 저장됐어요.</p><button class="btn" data-act="exam" data-m="order">처음부터 다시 풀기</button><button class="btn" style="background:transparent;color:var(--blue);border:1px solid var(--line)" data-act="home">실전 모의 탭으로</button></section>`;return}
   if(!q){app.innerHTML=`<div class="top"><button class="ghost" data-act="home">목록으로</button></div><section class="panel" style="text-align:center;padding:36px 16px"><h2>오답 노트 한 바퀴 끝!</h2><p class="sub">${z.t}문제 중 ${z.c}문제 맞혔고, ${z.cleared}문제를 오답 노트에서 뺐어요.</p><p class="sub">남은 오답 ${wrongs.length}개</p>${wrongs.length?`<button class="btn" data-act="wrong" data-m="same">남은 오답 다시 풀기</button>`:''}<button class="btn" style="background:transparent;color:var(--blue);border:1px solid var(--line)" data-act="home">목록으로</button></section>`;return}
-  let h=`<div class="top"><button class="ghost" data-act="home">그만하기</button><span class="score">${z.mode?`오답 노트 ${z.t+(z.done?0:1)} / ${z.total}`:`맞힌 문제 ${z.c} / ${z.t}`}</span></div>
-  <div class="qhead"><span class="qtype">${TN[q.type]}${z.hard?' <b class="hardb">🔥 극상</b>':''}</span><span>${z.done?`${PL(q.p)} 지문`:(z.pool&&z.pool.length===1?`${PL(q.p)} 지문`:'어느 지문일까요?')}</span></div>
+  let h=`<div class="top"><button class="ghost" data-act="home">그만하기</button><span class="score">${z.exam?`실전 ${z.t+(z.done?0:1)} / ${z.total} · 맞힘 ${z.c}`:z.mode?`오답 노트 ${z.t+(z.done?0:1)} / ${z.total}`:`맞힌 문제 ${z.c} / ${z.t}`}</span></div>
+  <div class="qhead"><span class="qtype">${TN[q.type]}${z.hard?' <b class="hardb">🔥 극상</b>':(z.exl!==false&&!z.exam&&!z.mode?' <b class="hardb" style="background:var(--blue)">🎯 실전</b>':'')}</span><span>${q.label?q.label+(z.done?' · '+PL(q.p)+' 지문':''):z.done?`${PL(q.p)} 지문`:(z.pool&&z.pool.length===1?`${PL(q.p)} 지문`:'어느 지문일까요?')}</span></div>
   <p class="prompt">${q.prompt}</p><div class="psg">${q.body}</div>${q.head||''}
   <div class="opts">${q.opts.map((o,i)=>{let c='opt';if(z.done){if(i===q.ans)c+=' right';else if(i===z.pick)c+=' wrong';}
     return `<button class="${c}" data-act="pick" data-i="${i}" ${z.done?'disabled':''}><span class="cn">${CIRC[i]}</span><span class="${q.en?'en':''}">${q.type==='insert'||q.type==='irr'||q.nolabel?'':o}</span></button>`}).join('')}</div>`;
@@ -1586,7 +1685,7 @@ function renderQuiz(){
   h+=`<div class="bar"><div class="in"><button class="btn" data-act="nextq" ${z.done?'':'disabled'}>${z.mode&&!z.queue.length?'결과 보기':'다음 문제'}</button></div></div>`;
   app.innerHTML=h;
 }
-function startQuiz(pool,types){st.quiz={pool,types,c:0,t:0,last:null,hard:!!cfg.hard};nextQ();st.view='quiz';render();window.scrollTo(0,0);}
+function startQuiz(pool,types){st.quiz={pool,types,c:0,t:0,last:null,hard:!!cfg.hard,exl:cfg.exl!==false};nextQ();st.view='quiz';render();window.scrollTo(0,0);}
 function openStudy(p){st.curL=null;st.cur=p;st.view='study';st.revealAll=false;render();window.scrollTo(0,0);}
 
 document.addEventListener('click',e=>{
@@ -1596,8 +1695,11 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'type':{const k=el.dataset.k;cfg.types=cfg.types.includes(k)?cfg.types.filter(x=>x!==k):[...cfg.types,k];store.set('oly-cfg',cfg);render();break}
     case 'unit':{const u=(isNaN(el.dataset.u)?el.dataset.u:+el.dataset.u);cfg.units=cfg.units.includes(u)?cfg.units.filter(x=>x!==u):[...cfg.units,u];store.set('oly-cfg',cfg);render();break}
+    case 'exl':cfg.exl=el.checked;store.set('oly-cfg',cfg);break;
     case 'hard':cfg.hard=el.checked;store.set('oly-cfg',cfg);break;
     case 'weak':cfg.weak=el.checked;store.set('oly-cfg',cfg);break;
+    case 'exam1':{const e=EXAM.find(x=>x.n===+el.dataset.n);st.quiz={exam:true,single:true,queue:[e],total:1,c:0,t:0,last:null,hard:false};nextQ();st.view='quiz';render();window.scrollTo(0,0);break}
+    case 'exam':{const m=el.dataset.m;const q=m==='shuffle'?shuffle(EXAM):m==='wrong'?EXAM.filter(e=>examRes[e.n]===false):EXAM.slice();st.quiz={exam:true,queue:q,total:q.length,c:0,t:0,last:null,hard:false};nextQ();st.view='quiz';render();window.scrollTo(0,0);break}
     case 'start':{const pool=TAB()==='mock'?P.filter(p=>p.set==='mock'&&MSEL().includes(p.id)):P.filter(p=>p.set===TAB()&&cfg.units.includes(p.u));const ty=cfg.types.filter(t=>!(TAB()==='mock'&&t==='gram'));if(pool.length&&ty.length)startQuiz(pool,ty);break}
     case 'mpick':{const s=MSEL();const id=el.dataset.id;cfg.msel=s.includes(id)?s.filter(x=>x!==id):[...s,id];store.set('oly-cfg',cfg);render();break}
     case 'mall':{const ms=P.filter(p=>p.set==='mock').map(p=>p.id);cfg.msel=MSEL().length===ms.length?[]:ms;store.set('oly-cfg',cfg);render();break}
@@ -1623,7 +1725,7 @@ document.addEventListener('click',e=>{
     case 'next':{const i=P.indexOf(st.cur);if(i<P.length-1)openStudy(P[i+1]);break}
     case 'memo':memo[st.cur.id]=!memo[st.cur.id];if(!memo[st.cur.id])delete memo[st.cur.id];store.set('oly-memo',memo);render();break;
     case 'quizone':startQuiz([st.cur],cfg.types.length?cfg.types.slice():TYPES.map(t=>t.k));break;
-    case 'pick':{if(z.done)break;const i=+el.dataset.i;z.pick=i;z.done=true;z.t++;const ok=i===z.q.ans;if(ok)z.c++;
+    case 'pick':{if(z.done)break;const i=+el.dataset.i;z.pick=i;z.done=true;z.t++;const ok=i===z.q.ans;if(ok)z.c++;if(z.exam&&z.q.en_n!==undefined){examRes[z.q.en_n]=ok;store.set('oly-exam',examRes);}
       if(z.mode){if(ok){wrongs=wrongs.filter(x=>x.k!==z.q.wk);z.cleared++;}saveWrongs();}
       else if(!ok){const q=z.q;wrongs.push({k:Date.now().toString(36)+Math.random().toString(36).slice(2,6),id:q.p.id,type:q.type,q:{prompt:q.prompt,body:q.body,opts:q.opts,ans:q.ans,explain:q.explain,head:q.head||'',en:!!q.en,nolabel:!!q.nolabel}});saveWrongs();}
       const s=stats[z.q.p.id]||{c:0,t:0};s.t++;if(ok)s.c++;stats[z.q.p.id]=s;store.set('oly-stats',stats);render();
@@ -1632,7 +1734,7 @@ document.addEventListener('click',e=>{
     case 'wrongclear':if(confirm('오답 노트를 모두 지울까요?')){wrongs=[];saveWrongs();render();}break;
     case 'nextq':nextQ();render();window.scrollTo(0,0);break;
     case 'openq':openStudy(z.q.p);break;
-    case 'reset':if(confirm('풀이 기록과 외움 표시를 모두 지울까요?')){stats={};memo={};wrongs=[];saveWrongs();store.set('oly-stats',stats);store.set('oly-memo',memo);render();}break;
+    case 'reset':if(confirm('풀이 기록과 외움 표시를 모두 지울까요?')){stats={};memo={};wrongs=[];examRes={};store.set('oly-exam',examRes);saveWrongs();store.set('oly-stats',stats);store.set('oly-memo',memo);render();}break;
   }
 });
 document.addEventListener('keydown',e=>{const w=e.target.closest&&e.target.closest('.w');if(w&&(e.key==='Enter'||e.key===' ')){e.preventDefault();w.classList.toggle('open')}});
